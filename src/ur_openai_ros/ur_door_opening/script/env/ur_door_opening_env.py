@@ -47,9 +47,19 @@ from env import robot_gazebo_env_goal
 from env.ur_setups import setups
 from env import ur_utils
 
+from algorithm.ppo_gae import PPOGAEAgent
+
+seed = rospy.get_param("/ML/seed")
 obs_dim = rospy.get_param("/ML/obs_dim")
 n_act = rospy.get_param("/ML/n_act")
+epochs = rospy.get_param("/ML/epochs")
+hdim = rospy.get_param("/ML/hdim")
+policy_lr = rospy.get_param("/ML/policy_lr")
+value_lr = rospy.get_param("/ML/value_lr")
+max_std = rospy.get_param("/ML/max_std")
+clip_range = rospy.get_param("/ML/clip_range")
 n_step = rospy.get_param("/ML/n_step")
+sub_step = rospy.get_param("/ML/sub_step")
 
 rospy.loginfo("register...")
 #register the training environment in the gym as an available one
@@ -58,6 +68,7 @@ reg = gym.envs.register(
     entry_point='env.ur_door_opening_env:URSimDoorOpening', # Its directory associated with importing in other sources like from 'ur_reaching.env.ur_sim_env import *' 
     #timestep_limit=100000,
     )
+agent = PPOGAEAgent(obs_dim, n_act, epochs, hdim, policy_lr, value_lr, max_std, clip_range, seed)
 
 class URSimDoorOpening(robot_gazebo_env_goal.RobotGazeboEnv):
     def __init__(self):
@@ -461,8 +472,14 @@ class URSimDoorOpening(robot_gazebo_env_goal.RobotGazeboEnv):
 
         eef_rpy = self.get_orientation(q)
         eef_rpy_ini = self.get_orientation(self.init_joint_pose2)
-        r_image = self.right_image
-        l_image = self.left_image
+
+        delta_image_r, delta_image_l = self.get_image()
+        self.cnn_image_r = agent.update_cnn(delta_image_r)
+        self.cnn_image_l = agent.update_cnn(delta_image_l)
+        self.cnn_image_r_list = self.cnn_image_r.tolist()
+        self.cnn_image_l_list = self.cnn_image_l.tolist()
+#        print("self.cnn_image_r_list", self.cnn_image_r_list)
+#        print("self.cnn_image_r_list", self.cnn_image_r_list[0])
 
         observation = []
 #        rospy.logdebug("List of Observations==>"+str(self.observations))
@@ -515,6 +532,13 @@ class URSimDoorOpening(robot_gazebo_env_goal.RobotGazeboEnv):
                 observation.append((self.torque.y - self.torque_ini.y) / self.torque_limit * self.torque_n)
             elif obs_name == "torque_z":
                 observation.append((self.torque.z - self.torque_ini.z) / self.torque_limit * self.torque_n)
+            elif obs_name == "image_cnn":
+                for x in range(0, 10):
+                    observation.append(self.cnn_image_r_list[0][x])
+#                    print("r_list", self.cnn_image_r_list[0][x])
+                for x in range(0, 10):
+                    observation.append(self.cnn_image_l_list[0][x])
+#                    print("l_list", self.cnn_image_l_list[0][x])
             elif obs_name == "image_data":
                 for x in range(0, 28):
                     observation.append((ord(r_image.data[x]) - ord(self.right_image_ini.data[x])) * self.image_n)
@@ -523,8 +547,20 @@ class URSimDoorOpening(robot_gazebo_env_goal.RobotGazeboEnv):
             else:
                 raise NameError('Observation Asked does not exist=='+str(obs_name))
 #        print("observation", list(map(round, observation, [3]*len(observation))))
+#        print("observation", observation)
 
         return observation
+
+    def get_image(self):
+        delta_image_r = []
+        delta_image_l = []
+        r_image = self.right_image
+        l_image = self.left_image
+        for x in range(0, 28):
+            delta_image_r.append((ord(r_image.data[x]) - ord(self.right_image_ini.data[x])) * self.image_n)
+        for x in range(0, 28):
+            delta_image_l.append((ord(l_image.data[x]) - ord(self.left_image_ini.data[x])) * self.image_n)
+        return delta_image_r, delta_image_l
 
     def clamp_to_joint_limits(self):
         """
@@ -749,80 +785,96 @@ class URSimDoorOpening(robot_gazebo_env_goal.RobotGazeboEnv):
 
 #        print("action", action)
 
-        action = action + self.arr_init_pos2
-#        action = [1.488122534496775, -1.4496597816566892, 2.4377209990850974, 2.168370898415174, -1.4670589583209175, 1.4]
-        self._act(action)
+#        action = action + self.arr_init_pos2
 
-        self.wrench_stamped
-        self.force = self.wrench_stamped.wrench.force
-        self.torque = self.wrench_stamped.wrench.torque
-#        print("force", self.force)
-#        print("torque", self.torque)
+        for x in range(1, sub_step + 1):
+            sub_action = np.array(action) / sub_step * x
+#            print("sub_action, sub_step, x1", sub_action, sub_step, x)
+            sub_action = sub_action + self.arr_init_pos2
+#            print("sub_action, sub_step, x2", sub_action, sub_step, x)
 
-        if self.max_force_x < self.force.x:
-            self.max_force_x = self.force.x
-        if self.min_force_x > self.force.x:
-            self.min_force_x = self.force.x
-        if self.max_force_y < self.force.y:
-            self.max_force_y = self.force.y
-        if self.min_force_y > self.force.y:
-            self.min_force_y = self.force.y
-        if self.max_force_z < self.force.z:
-            self.max_force_z = self.force.z
-        if self.min_force_z > self.force.z:
-            self.min_force_z = self.force.z
-        if self.max_torque_x < self.torque.x:
-            self.max_torque_x = self.torque.x
-        if self.min_torque_x > self.torque.x:
-            self.min_torque_x = self.torque.x
-        if self.max_torque_y < self.torque.y:
-            self.max_torque_y = self.torque.y
-        if self.min_torque_y > self.torque.y:
-            self.min_torque_y = self.torque.y
-        if self.max_torque_z < self.torque.z:
-            self.max_torque_z = self.torque.z
-        if self.min_torque_z > self.torque.z:
-            self.min_torque_z = self.torque.z
+            self._act(sub_action)
+            self.wrench_stamped
+            self.force = self.wrench_stamped.wrench.force
+            self.torque = self.wrench_stamped.wrench.torque
+            self.delta_force_x = self.force.x - self.force_ini.x 
+            self.delta_force_y = self.force.y - self.force_ini.y
+            self.delta_force_z = self.force.z - self.force_ini.z
+            self.delta_torque_x = self.torque.x - self.torque_ini.x
+            self.delta_torque_y = self.torque.y - self.torque_ini.y
+            self.delta_torque_z = self.torque.z - self.torque_ini.z
 
-        if self.force_limit < self.force.x or self.force.x < -self.force_limit:
-        	self._act(self.previous_action)
-#        	print("force.x over the limit")
-        elif self.force_limit < self.force.y or self.force.y < -self.force_limit:
-        	self._act(self.previous_action)
-#        	print("force.y over the limit")
-        elif self.force_limit < self.force.z or self.force.z < -self.force_limit:
-        	self._act(self.previous_action)
-#        	print("force.z over the limit")
-        elif self.torque_limit < self.torque.x or self.torque.x < -self.torque_limit:
-        	self._act(self.previous_action)
-#        	print("torque.x over the limit")
-        elif self.torque_limit < self.torque.y or self.torque.y < -self.torque_limit:
-        	self._act(self.previous_action)
-#        	print("torque.y over the limit")
-        elif self.torque_limit < self.torque.z or self.torque.z < -self.torque_limit:
-        	self._act(self.previous_action)
-#        	print("torque.z over the limit")
-        else:
-        	self.previous_action = copy.deepcopy(action)
-#        	print("True")
+            if self.max_force_x < self.delta_force_x:
+                self.max_force_x = self.delta_force_x
+            if self.min_force_x > self.delta_force_x:
+                self.min_force_x = self.delta_force_x
+            if self.max_force_y < self.delta_force_y:
+                self.max_force_y = self.delta_force_y
+            if self.min_force_y > self.delta_force_y:
+                self.min_force_y = self.delta_force_y
+            if self.max_force_z < self.delta_force_z:
+                self.max_force_z = self.delta_force_z
+            if self.min_force_z > self.delta_force_z:
+                self.min_force_z = self.delta_force_z
+            if self.max_torque_x < self.delta_torque_x:
+                self.max_torque_x = self.delta_torque_x
+            if self.min_torque_x > self.delta_torque_x:
+                self.min_torque_x = self.delta_torque_x
+            if self.max_torque_y < self.delta_torque_y:
+                self.max_torque_y = self.delta_torque_y
+            if self.min_torque_y > self.delta_torque_y:
+                self.min_torque_y = self.delta_torque_y
+            if self.max_torque_z < self.delta_torque_z:
+                self.max_torque_z = self.delta_torque_z
+            if self.min_torque_z > self.delta_torque_z:
+                self.min_torque_z = self.delta_torque_z
 
-        self.min_static_taxel0 = 0
-        self.min_static_taxel1 = 0
-        self.max_static_taxel0 = 0
-        self.max_static_taxel1 = 0
-        r_image = self.right_image
-        l_image = self.left_image
+            if self.force_limit < self.delta_force_x or self.delta_force_x < -self.force_limit:
+                self._act(self.previous_action)
+                print("force.x over the limit")
+            elif self.force_limit < self.delta_force_y or self.delta_force_y < -self.force_limit:
+                self._act(self.previous_action)
+                print("force.y over the limit")
+            elif self.force_limit < self.delta_force_z or self.delta_force_z < -self.force_limit:
+                self._act(self.previous_action)
+                print("force.z over the limit")
+            elif self.torque_limit < self.delta_torque_x or self.delta_torque_x < -self.torque_limit:
+                self._act(self.previous_action)
+                print("torque.x over the limit")
+            elif self.torque_limit < self.delta_torque_y or self.delta_torque_y < -self.torque_limit:
+                self._act(self.previous_action)
+                print("torque.y over the limit")
+            elif self.torque_limit < self.delta_torque_z or self.delta_torque_z < -self.torque_limit:
+                self._act(self.previous_action)
+                print("torque.z over the limit")
+            else:
+                self.previous_action = copy.deepcopy(action)
+                print("act_correctly")
 
-        for x in range(0, 28):
-            if self.min_static_taxel0 > (ord(r_image.data[x]) - ord(self.right_image_ini.data[x])) * self.image_n:
-                self.min_static_taxel0 = (ord(r_image.data[x]) - ord(self.right_image_ini.data[x])) * self.image_n
-            if self.min_static_taxel1 > (ord(l_image.data[x]) - ord(self.left_image_ini.data[x])) * self.image_n:
-                self.min_static_taxel1 = (ord(l_image.data[x]) - ord(self.left_image_ini.data[x])) * self.image_n
-            if self.max_static_taxel0 < (ord(r_image.data[x]) - ord(self.right_image_ini.data[x])) * self.image_n:
-                self.max_static_taxel0 = (ord(r_image.data[x]) - ord(self.right_image_ini.data[x])) * self.image_n
-            if self.max_static_taxel1 < (ord(l_image.data[x]) - ord(self.left_image_ini.data[x])) * self.image_n:
-                self.max_static_taxel1 = (ord(l_image.data[x]) - ord(self.left_image_ini.data[x])) * self.image_n
-#        print("min, max taxel", self.min_static_taxel0, self.max_static_taxel0, self.min_static_taxel1, self.max_static_taxel1)
+            self.min_static_taxel0 = 0
+            self.min_static_taxel1 = 0
+            self.max_static_taxel0 = 0
+            self.max_static_taxel1 = 0
+            r_image = self.right_image
+            l_image = self.left_image
+
+            for x in range(0, 28):
+                if self.min_static_taxel0 > (ord(r_image.data[x]) - ord(self.right_image_ini.data[x])) * self.image_n:
+                    self.min_static_taxel0 = (ord(r_image.data[x]) - ord(self.right_image_ini.data[x])) * self.image_n
+                if self.min_static_taxel1 > (ord(l_image.data[x]) - ord(self.left_image_ini.data[x])) * self.image_n:
+                    self.min_static_taxel1 = (ord(l_image.data[x]) - ord(self.left_image_ini.data[x])) * self.image_n
+                if self.max_static_taxel0 < (ord(r_image.data[x]) - ord(self.right_image_ini.data[x])) * self.image_n:
+                    self.max_static_taxel0 = (ord(r_image.data[x]) - ord(self.right_image_ini.data[x])) * self.image_n
+                if self.max_static_taxel1 < (ord(l_image.data[x]) - ord(self.left_image_ini.data[x])) * self.image_n:
+                    self.max_static_taxel1 = (ord(l_image.data[x]) - ord(self.left_image_ini.data[x])) * self.image_n
+#            print("min, max taxel", self.min_static_taxel0, self.max_static_taxel0, self.min_static_taxel1, self.max_static_taxel1)
+
+            if self.min_static_taxel0 < self.min_static_limit and self.min_static_taxel1 < self.min_static_limit:
+                print("slipped and break the for loop(min over)", self.min_static_taxel0, self.min_static_taxel1)
+                break
+            if self.max_static_taxel0 > self.max_static_limit and self.max_static_taxel1 > self.max_static_limit:
+                print("slipped and break the for loop(max over)", self.max_static_taxel0, self.max_static_taxel1)
+                break
 
         # Then we send the command to the robot and let it go for running_step seconds
         time.sleep(self.running_step)
@@ -845,34 +897,35 @@ class URSimDoorOpening(robot_gazebo_env_goal.RobotGazeboEnv):
         self.door_rpy = self.cvt_quat_to_euler(self.quat)
         self.quat = self.imu_link.orientation
         self.imu_link_rpy = self.cvt_quat_to_euler(self.quat)
-        compute_rewards = 0
+        compute_rewards = 0.0001
 
-        knob_c = 100       #1 rotation of knob(+)
+        knob_c = 100         #1 rotation of knob(+)
         knob_bonus_c = 10  #2 bonus of knob rotation(+)
         panel_c = 50       #3 door panel open(+)
-        panel_b_c = 50     #4 door panel before open(-)
-        tolerances_c = 50  #5 movement of door frame(-)
-        force_c = 1       #6 over force limit1(-)
-        taxel_c = 100      #7 release the knob(-)
-        act_0_n = 10       #8 action[0] (-)
-        act_1_n = 10       #  action[1] (-)
-        act_2_n = 10       #  action[2] (-)
-        act_3_n = 10       #  action[3] (-)
-        act_4_n = 10       #  action[4] (-)
-        act_5_n = 10       #  action[5] (-)
+        panel_b_c = 0      #4 door panel before open(-)
+        tolerances_c = 50   #5 movement of door frame(-)
+        force_c = 50        #6 over force limit1(-)
+        taxel_c = 0        #7 release the knob(-)
+        act_0_n = 10        #8 action[0] (+)
+        act_1_n = 1        #  action[1] (+)
+        act_2_n = 1        #  action[2] (+)
+        act_3_n = 1        #  action[3] (+)
+        act_4_n = 1        #  action[4] (+)
+        act_5_n = 1        #  action[5] (+)
 
         #1 rotation of knob(+), #2 bonus of knob rotation(+), #3 door panel open(+), 
-        if self.imu_link_rpy.x < 0.8:
+        if 0 < self.imu_link_rpy.x and self.imu_link_rpy.x < 0.8:
             compute_rewards = self.imu_link_rpy.x * knob_c
             print("reward_knob_rotation", compute_rewards)
-            if 0.4 > self.imu_link_rpy.x > 0.2:
+            if 0.2 < self.imu_link_rpy.x < 0.4:
                 compute_rewards = self.imu_link_rpy.x * knob_c + knob_bonus_c
-            elif 0.6 > self.imu_link_rpy.x > 0.4:
+            elif 0.4 < self.imu_link_rpy.x < 0.6:
                 compute_rewards = self.imu_link_rpy.x * knob_c + knob_bonus_c * 2
-            elif 0.8 > self.imu_link_rpy.x > 0.6:
+            elif 0.6 < self.imu_link_rpy.x < 0.8:
                 compute_rewards = self.imu_link_rpy.x * knob_c + knob_bonus_c * 3
-        else:
+        elif 0.8 < self.imu_link_rpy.x:
             compute_rewards = 0.8 * knob_c + knob_bonus_c * 3 + (1.5708061 - self.imu_link_rpy.z) * panel_c
+            print("reward_knob_rotation", compute_rewards)
 
         #5 movement of door frame(-)
         if abs(self.door_frame.position.x + 0.0659) > self.tolerances or abs(self.door_frame.position.y - 0.5649) > self.tolerances or abs(self.door_frame.position.z - 0.0999) > self.tolerances:
@@ -880,22 +933,22 @@ class URSimDoorOpening(robot_gazebo_env_goal.RobotGazeboEnv):
             print("door_frame limit", compute_rewards)
 
         #6 over force limit1(-)
-        if self.force_limit < self.force.x or self.force.x < -self.force_limit:
+        if self.force_limit < self.delta_force_x or self.delta_force_x < -self.force_limit:
         	compute_rewards -= force_c * ( n_step - update ) / n_step + force_c
                 print("force_x limit", compute_rewards)
-        if self.force_limit < self.force.y or self.force.y < -self.force_limit:
+        if self.force_limit < self.delta_force_y or self.delta_force_y < -self.force_limit:
         	compute_rewards -= force_c * ( n_step - update ) / n_step + force_c
                 print("force_y limit", compute_rewards)
-        if self.force_limit < self.force.z or self.force.z < -self.force_limit:
+        if self.force_limit < self.delta_force_z or self.delta_force_z < -self.force_limit:
         	compute_rewards -= force_c * ( n_step - update ) / n_step + force_c
                 print("force_z limit", compute_rewards)
-        if self.torque_limit < self.torque.x or self.torque.x < -self.torque_limit:
+        if self.torque_limit < self.delta_torque_x or self.delta_torque_x < -self.torque_limit:
         	compute_rewards -= force_c * ( n_step - update ) / n_step + force_c
                 print("torque_x limit", compute_rewards)
-        if self.torque_limit < self.torque.y or self.torque.y < -self.torque_limit:
+        if self.torque_limit < self.delta_torque_y or self.delta_torque_y < -self.torque_limit:
         	compute_rewards -= force_c * ( n_step - update ) / n_step + force_c
                 print("torque_y limit", compute_rewards)
-        if self.torque_limit < self.torque.z or self.torque.z < -self.torque_limit:
+        if self.torque_limit < self.delta_torque_z or self.delta_torque_z < -self.torque_limit:
         	compute_rewards -= force_c * ( n_step - update ) / n_step + force_c
                 print("torque_z limit", compute_rewards)
 
@@ -907,44 +960,38 @@ class URSimDoorOpening(robot_gazebo_env_goal.RobotGazeboEnv):
             compute_rewards -= taxel_c * (n_step - update) / n_step + taxel_c
             print("max_static limit", compute_rewards)
 
-        #8 joint(+, -)
-        action = action - self.arr_init_pos2
-        if action[5] < -0.005:
-            compute_rewards -= (-0.005 - action[5]) * act_5_n
-            print("action5 limit", compute_rewards)
-        elif 1 < action[5]:
-            compute_rewards -= (action[5] -1 ) * act_5_n
-            print("action5 limit", compute_rewards)
-        if action[4] < -0.005:
-            compute_rewards -= (-0.005 - action[4]) * act_4_n
-            print("action4 limit", compute_rewards)
-        elif 0.03 < action[4]:
-            compute_rewards -= (action[4] - 0.03) * act_4_n
-            print("action4 limit", compute_rewards)
-        if action[3] < -0.023:
-            compute_rewards -= (-0.023 - action[3]) * act_3_n
-            print("action3 limit", compute_rewards)
-        elif 0.005 < action[3]:
-            compute_rewards -= (action[3] - 0.005) * act_3_n
-            print("action3 limit", compute_rewards)
-        if action[2] < -0.005:
-            compute_rewards -= (-0.005 - action[2]) * act_2_n
-            print("action2 limit", compute_rewards)
-        elif 0.14 < action[2]:
-            compute_rewards -= (action[2] - 0.14) * act_2_n
-            print("action2 limit", compute_rewards)
-        if action[1] < -0.11:
-            compute_rewards -= (-0.11 - action[1]) * act_1_n
-            print("action1 limit", compute_rewards)
-        elif 0.005 < action[1]:
-            compute_rewards -= (action[1] - 0.005) * act_1_n
-            print("action1 limit", compute_rewards)
-        if action[0] < -0.015:
-            compute_rewards -= (-0.015 - action[0]) * act_0_n
-            print("action0 limit", compute_rewards)
-        if 0.005 < action[0]:
-            compute_rewards -= (action[0] - 0.005) * act_0_n
-            print("action0 limit", compute_rewards)
+        #8 joint(+)
+        act_5_n_limit = 0       # -0.005
+        act_5_p_limit = 1       #  1
+        act_4_n_limit = 0       # -0.005
+        act_4_p_limit = 0.03    #  0.03
+        act_3_n_limit = -0.023  # -0.023
+        act_3_p_limit = 0       #  0.005
+        act_2_n_limit = 0       # -0.005
+        act_2_p_limit = 0.14    #  0.14
+        act_1_n_limit = -0.11   # -0.11
+        act_1_p_limit = 0       #  0.005
+        act_0_n_limit = -0.015  # -0.015
+        act_0_p_limit = 0       #  0.005
+
+        if act_5_n_limit < action[5] and action[5] < act_5_p_limit:
+            compute_rewards += action[5] * act_5_n
+            print("action5 limit", action[5] * act_5_n)
+        if act_4_n_limit < action[4] and action[4] < act_4_p_limit:
+            compute_rewards += action[4] * act_4_n
+            print("action4 limit", action[4] * act_4_n)
+        if act_3_n_limit < action[3] and action[3] < act_3_p_limit:
+            compute_rewards += -action[3] * act_3_n
+            print("action3 limit", -action[3] * act_3_n)
+        if act_2_n_limit < action[2] and action[2] < act_2_p_limit:
+            compute_rewards += action[2] * act_2_n
+            print("action2 limit", action[2] * act_2_n)
+        if act_1_n_limit < action[1] and action[1] < act_1_p_limit:
+            compute_rewards += -action[1] * act_1_n
+            print("action1 limit", -action[1] * act_1_n)
+        if act_0_n_limit < action[0] and action[0] < act_0_p_limit:
+            compute_rewards += -action[0] * act_0_n
+            print("action0 limit", -action[0] * act_0_n)
 
         if self.max_knob_rotation < self.imu_link_rpy.x:
             self.max_knob_rotation = self.imu_link_rpy.x
@@ -952,6 +999,7 @@ class URSimDoorOpening(robot_gazebo_env_goal.RobotGazeboEnv):
             self.max_door_rotation = 1.5708061 - self.imu_link_rpy.z
 #        print("imu_link_rpy", self.imu_link_rpy)
 #        print("door_frame", self.door_frame.position.x + 0.0659, self.door_frame.position.y - 0.5649, self.door_frame.position.z - 0.0999)
+        print("compute_rewards", compute_rewards)
 
         return compute_rewards
 

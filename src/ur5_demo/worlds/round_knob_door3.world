@@ -56,7 +56,7 @@
 
       <link name='frame'>
         <pose frame=''>-0.035 0.116 0 0 -0 0</pose>
-        <collision name='collision_1'>
+        <collision name='collision'>
           <pose frame=''>0 -0.06858 0 0 -0 0</pose>
           <geometry>
             <mesh>
@@ -64,18 +64,18 @@
               <scale>0.45 0.45 0.25</scale>
             </mesh>
           </geometry>
-          <max_contacts>10</max_contacts>
+<!--          <max_contacts>10</max_contacts>
           <surface>
             <friction>
               <ode>
-                <mu>1</mu>
-                <mu2>1</mu2>
+                <mu>0</mu>
+                <mu2>0</mu2>
                 <fdir1>0 0 0</fdir1>
                 <slip1>0</slip1>
                 <slip2>0</slip2>
               </ode>
               <torsional>
-                <coefficient>1</coefficient>
+                <coefficient>0</coefficient>
                 <patch_radius>0</patch_radius>
                 <surface_radius>0</surface_radius>
                 <use_patch_radius>1</use_patch_radius>
@@ -86,7 +86,7 @@
             </friction>
             <bounce>
               <restitution_coefficient>0</restitution_coefficient>
-              <threshold>1e+06</threshold>
+              <threshold>1e+10</threshold>
             </bounce>
             <contact>
               <collide_without_contact>0</collide_without_contact>
@@ -95,13 +95,13 @@
               <ode>
                 <soft_cfm>0</soft_cfm>
                 <soft_erp>0.2</soft_erp>
-                <kp>1e+13</kp>
+                <kp>1e+20</kp>
                 <kd>1</kd>
-                <max_vel>0.01</max_vel>
-                <min_depth>0</min_depth>
+                <max_vel>1</max_vel>
+                <min_depth>0.001</min_depth>
               </ode>
             </contact>
-          </surface>
+          </surface> -->
         </collision>
 
         <visual name='visual'>
@@ -113,18 +113,25 @@
             </mesh>
           </geometry>
         </visual>
-        <self_collide>0</self_collide>
+
         <inertial>
           <inertia>
-            <ixx>1</ixx>
+            <ixx>100</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>100</iyy>
+            <iyz>0</iyz>
+            <izz>100</izz>
+<!--            <ixx>1</ixx>
             <ixy>0</ixy>
             <ixz>0</ixz>
             <iyy>1</iyy>
             <iyz>0</iyz>
-            <izz>1</izz>
+            <izz>1</izz> -->
           </inertia>
-          <mass>100</mass> <!-- It is important for fixing the position -->
+          <mass>1000</mass> <!-- It is important for fixing the position -->
         </inertial>
+        <self_collide>0</self_collide>
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
       </link>
@@ -135,12 +142,18 @@
           <mass>41.3256</mass>
           <pose frame=''>0.4569 0.0349 1.016 0 -0 0</pose>
           <inertia>
-            <ixx>14.2053</ixx>
+<!--            <ixx>14.2053</ixx>
             <ixy>0.0004</ixy>
             <ixz>0</ixz>
             <iyy>17.1997</iyy>
             <iyz>0</iyz>
-            <izz>3.0298</izz>
+            <izz>3.0298</izz> -->
+            <ixx>15</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>17</iyy>
+            <iyz>0</iyz>
+            <izz>3</izz>
           </inertia>
         </inertial>
         <collision name='collision'>
@@ -178,6 +191,7 @@
         <enable_wind>0</enable_wind>
         <kinematic>0</kinematic>
       </link>
+
       <link name='handles'>
         <pose frame=''>-0.085 0.155 0.2748 -3.14159 -0 -1.57159</pose>
         <collision name='handle1_collision'>
@@ -523,10 +537,10 @@
         </physics>
       </joint>
 
-      <joint name='world_joint' type='fixed'>
+      <joint name='frame_world_joint' type='fixed'>
         <child>frame</child>
         <parent>world</parent>
-        <axis>
+<!--        <axis>
           <limit>
             <lower>0</lower>
             <upper>0</upper>
@@ -551,8 +565,9 @@
               <erp>0.2</erp>
             </limit>
           </ode>
-        </physics>
+        </physics> -->
       </joint>
+
       <pose frame=''>0.05 0.6 0.1 0 -0 1.5708</pose>
     </model>
 
