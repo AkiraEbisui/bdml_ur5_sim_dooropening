@@ -6,6 +6,16 @@ from sklearn.utils import shuffle
 # ROS
 import rospy
 
+import os
+import logging
+import warnings
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+warnings.simplefilter(action='ignore', category=FutureWarning)
+warnings.simplefilter(action='ignore', category=Warning)
+tf.get_logger().setLevel('INFO')
+tf.autograph.set_verbosity(0)
+tf.get_logger().setLevel(logging.ERROR)
+
 obs_dim = rospy.get_param("/ML/obs_dim")
 n_act = rospy.get_param("/ML/n_act")
 clip_range = rospy.get_param("/ML/clip_range")

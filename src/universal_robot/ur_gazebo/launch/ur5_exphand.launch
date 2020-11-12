@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="limited" default="true"  doc="If true, limits joint range [-PI, PI] on all joints." />
+  <arg name="paused" default="false" doc="Starts gazebo in paused mode" />
+  <arg name="gui" default="true" doc="Starts gazebo gui" />
+  <arg name="debug" default="false"/>
+  <arg name="headless" default="false"/>
+  <arg name="pause" default="false"/>  <!-- Start Gazebo with a blank world -->
+  
+  <!-- startup simulated world -->
+  <include file="$(find gazebo_ros)/launch/empty_world.launch">
+<!--    <arg name="world_name" default="worlds/empty.world"/> -->
+    <arg name="world_name" default="$(find ur5_demo)/worlds/round_knob_door3.world"/>
+    <arg name="debug" value="$(arg debug)" />
+    <arg name="gui" value="$(arg gui)" />
+    <arg name="paused" value="$(arg paused)"/>
+    <arg name="use_sim_time" value="true"/>
+    <arg name="headless" value="$(arg headless)"/>
+  </include>
+
+  <!-- push robot_description to factory and spawn robot in gazebo -->
+  <node name="spawn_gazebo_model" pkg="gazebo_ros" type="spawn_model"
+        args="-file $(find ur_description)/urdf/full_robot.urdf -urdf -z 0.1 -model exploratoryHand" respawn="false" output="screen" />
+  <param name="robot_description" command="cat $(find ur_description)/urdf/full_robot.urdf"/>
+
+  <include file="$(find ur_gazebo)/launch/controller_utils.launch"/>
+
+  <!-- start this controller -->
+  <!-- add the gripper controller-->
+  <rosparam file="$(find ur_gazebo)/controller/arm_controller_ur5.yaml" command="load"/>
+  <node name="arm_controller_spawner" pkg="controller_manager" type="controller_manager" args="spawn pos_traj_controller exphand_controller" respawn="false" output="screen"/>
+
+  <!-- load other controllers -->
+  <node name="ros_control_controller_manager" pkg="controller_manager" type="controller_manager" respawn="false" output="screen" args="load joint_group_position_controller" />
+
+</launch>
