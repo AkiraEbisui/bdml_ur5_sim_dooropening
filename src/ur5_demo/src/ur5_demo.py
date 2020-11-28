@@ -41,6 +41,25 @@ def test_move_home():
     ur5.goto_home_pose()
     print(ur5.get_joint_values())
 
+def test_get_xyz():
+    # Initialize the ros node
+    rospy.init_node("test_get_xyz", anonymous=True, disable_signals=True)
+
+    # Instantiage the UR5 interface.
+    ur5 = UR5Interface()
+
+    # MoveIt! works well if joint limits are smaller (within -pi, pi)
+    if not ur5.check_joint_limits():
+        raise Exception('Bad joint limits! try running roslaunch with option "limited:=true"')
+
+    ur5.get_pose()
+    print("get_pose", ur5.get_pose())
+    ur5.get_rpy()
+    print("get_rpy", ur5.get_rpy())
+    ur5.get_pose_array()
+    print("pose_array", ur5.get_pose_array())
+    ur5.get_joint_values()
+    print("get_joint_values", ur5.get_joint_values())
 
 def test_robotiq_gripper():
     """
@@ -130,8 +149,26 @@ def test_move_ur5_continuous():
         ur5.goto_pose_target(P3_pose, wait=False)
         time.sleep(INTER_COMMAND_DELAY)
 
+def debug_ur5():
+    rospy.init_node("test_move_ur5", anonymous=True, disable_signals=True)
 
-curr_demo = 1
+    ur5 = UR5Interface()
+
+    # MoveIt! works well if joint limits are smaller (within -pi, pi)
+    if not ur5.check_joint_limits():
+        raise Exception('Bad joint limits! try running roslaunch with option "limited:=true"')
+
+    current_pose = ur5.get_pose()
+    print("============ Current pose: %s" % current_pose)
+    
+    home_pose = ur5.get_pose()
+    P2_pose = copy.deepcopy(home_pose)
+    P2_pose.position.z -= 0.002
+    ur5.goto_pose_target(P2_pose)
+    current_value = ur5.get_joint_values()
+    print("joint_values", current_value)
+
+curr_demo = 6
 if __name__ == '__main__': 
     if (curr_demo == 1):
         test_move_home()
@@ -141,3 +178,7 @@ if __name__ == '__main__':
         test_move_ur5()
     elif (curr_demo == 4):
         test_move_ur5_continuous()
+    elif (curr_demo == 5):
+        debug_ur5()
+    elif (curr_demo == 6):
+        test_get_xyz()

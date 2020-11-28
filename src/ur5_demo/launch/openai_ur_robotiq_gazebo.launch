@@ -14,11 +14,11 @@
     <arg name="gui" value="$(arg gui)"/>
   </include>
 
-  <!-- Load moveit planner
+  <!-- Load moveit planner -->
   <include file="$(find ur5_moveit_config)/launch/ur5_moveit_planning_execution.launch">
     <arg name="sim" value="$(arg sim)"/>
     <arg name="limited" value="$(arg limited)"/>
-  </include> -->
+  </include>
 
   <!-- Run Rviz and load the default config to see the state of the move_group node
   <include file="$(find ur5_moveit_config)/launch/moveit_rviz.launch">

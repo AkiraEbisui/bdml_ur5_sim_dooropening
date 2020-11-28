@@ -1,6 +1,4 @@
 #!/usr/bin/env python
-
-import rospy
 import math
 import time
 import copy
@@ -11,11 +9,26 @@ from trajectory_msgs.msg import JointTrajectory
 from trajectory_msgs.msg import JointTrajectoryPoint
 from .controllers_connection import ControllersConnection
 
+# MoveIt
+import os
+import sys
+import numpy as np
+import rospy
+import moveit_commander
+from ur5_interface_for_door import UR5Interface
+from robotiq_interface_for_door import RobotiqInterface
+
+moveit = rospy.get_param("/moveit")
+dt_reset = rospy.get_param("/act_params/dt_reset")
+dt_act = rospy.get_param("/act_params/dt_act")
+dt_grp = rospy.get_param("/act_params/dt_grp")
+
 class JointTrajPub(object):
     def __init__(self):
         """
         Publish trajectory_msgs::JointTrajectory for velocity control
         """
+
         self._ctrl_conn = ControllersConnection(namespace="")
         current_controller_type =  rospy.get_param("/control_type")
 
@@ -25,8 +38,12 @@ class JointTrajPub(object):
         else:
         	self._ctrl_conn.load_controllers("vel_traj_controller")
         	self._joint_traj_pub = rospy.Publisher('/vel_traj_controller/command', JointTrajectory, queue_size=10)
-
        	self._grp_pub = rospy.Publisher('/gripper_controller/command', JointTrajectory, queue_size=10)
+
+        if moveit == 1:
+#            rospy.init_node("test_move_ur5_continuous", anonymous=True, disable_signals=True)
+            self.ur5 = UR5Interface()
+            self.grp = moveit_commander.MoveGroupCommander("gripper")
 
     def set_init_pose(self, init_pose):
     	"""
@@ -72,7 +89,7 @@ class JointTrajPub(object):
     	    jt.joint_names.append("wrist_2_joint")
     	    jt.joint_names.append("wrist_3_joint")
     	    	    
-    	    dt = 1 	#default 0.01
+    	    dt = dt_act 	#default 0.01
     	    p = JointTrajectoryPoint()	
     	    p.positions.append(1.488122534496775)   # 1.488122534496775
     	    p.positions.append(-1.4496597816566892) # -1.4496597816566892
@@ -107,7 +124,7 @@ class JointTrajPub(object):
     	    jt.joint_names.append("wrist_2_joint")
     	    jt.joint_names.append("wrist_3_joint")
     	    	    
-    	    dt = 0.1 	#default 0.01
+    	    dt = dt_reset 	#default 0.01
     	    p = JointTrajectoryPoint()	
     	    p.positions.append(joints_array[0])
     	    p.positions.append(joints_array[1])
@@ -141,7 +158,7 @@ class JointTrajPub(object):
     	    jt.joint_names.append("simple_gripper_right_spring_link_joint")
     	    jt.joint_names.append("simple_gripper_left_spring_link_joint")
     	    	    
-    	    dt = 0.01 	#default 0.01
+    	    dt = dt_grp 	#default 0.01
     	    p = JointTrajectoryPoint()	
     	    p.positions.append(joints_array[0])
     	    p.positions.append(joints_array[1])
@@ -157,6 +174,32 @@ class JointTrajPub(object):
     	    self._grp_pub.publish(jt)
 
     	except rospy.ROSInterruptException: pass
+
+    def MoveItCommand(self, action):
+        try:
+            self.ur5 = UR5Interface()
+            self.ur5.goto_pose_target(action)
+        except rospy.ROSInterruptException: pass
+
+    def MoveItJointTarget(self, joint_array):
+        try:
+            self.ur5 = UR5Interface()
+            self.ur5.goto_joint_target(joint_array)
+        except rospy.ROSInterruptException: pass
+
+    def MoveItGrpOpen(self):
+        try:
+            self.grp = moveit_commander.MoveGroupCommander("gripper")
+            self.grp.set_named_target('open')
+            self.grp.go(wait=False)
+        except rospy.ROSInterruptException: pass
+
+    def MoveItGrpClose(self):
+        try:
+            self.grp = moveit_commander.MoveGroupCommander("gripper")
+            self.grp.set_named_target('close0.31')
+            self.grp.go(wait=False)
+        except rospy.ROSInterruptException: pass
 
 if __name__=="__main__":
     rospy.init_node('joint_publisher_node', log_level=rospy.WARN)

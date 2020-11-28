@@ -179,6 +179,27 @@ def main():
     min_torque_y_list = deque(maxlen=maxlen_num) # 10
     max_torque_z_list = deque(maxlen=maxlen_num) # 10
     min_torque_z_list = deque(maxlen=maxlen_num) # 10
+    max_taxel0_list = deque(maxlen=maxlen_num) # 10
+    min_taxel0_list = deque(maxlen=maxlen_num) # 10
+    max_taxel1_list = deque(maxlen=maxlen_num) # 10
+    min_taxel1_list = deque(maxlen=maxlen_num) # 10
+    step_list = deque(maxlen=maxlen_num) # 10
+    min_act_correct_list = deque(maxlen=maxlen_num) # 10
+    max_act_correct_list = deque(maxlen=maxlen_num) # 10
+    min_door_tolerance_list = deque(maxlen=maxlen_num) # 10
+    max_door_tolerance_list = deque(maxlen=maxlen_num) # 10
+    max_eef_x_list = deque(maxlen=maxlen_num) # 10
+    min_eef_x_list = deque(maxlen=maxlen_num) # 10
+    max_eef_y_list = deque(maxlen=maxlen_num) # 10
+    min_eef_y_list = deque(maxlen=maxlen_num) # 10
+    max_eef_z_list = deque(maxlen=maxlen_num) # 10
+    min_eef_z_list = deque(maxlen=maxlen_num) # 10
+    max_eef_rpy_x_list = deque(maxlen=maxlen_num) # 10
+    min_eef_rpy_x_list = deque(maxlen=maxlen_num) # 10
+    max_eef_rpy_y_list = deque(maxlen=maxlen_num) # 10
+    min_eef_rpy_y_list = deque(maxlen=maxlen_num) # 10
+    max_eef_rpy_z_list = deque(maxlen=maxlen_num) # 10
+    min_eef_rpy_z_list = deque(maxlen=maxlen_num) # 10
 
     # save fig
     x_data = []
@@ -219,9 +240,142 @@ def main():
     y_data_min_torque_y = []
     y_data_max_torque_z = []
     y_data_min_torque_z = []
+    y_data_min_taxel0 = []
+    y_data_max_taxel0 = []
+    y_data_min_taxel1 = []
+    y_data_max_taxel1 = []
+    y_data_step = []
+    y_data_min_act_correct = []
+    y_data_max_act_correct = []
+    y_data_min_door_tolerance = []
+    y_data_max_door_tolerance = []
+    y_data_max_eef_x = []
+    y_data_min_eef_x = []
+    y_data_max_eef_y = []
+    y_data_min_eef_y = []
+    y_data_max_eef_z = []
+    y_data_min_eef_z = []
+    y_data_max_eef_rpy_x = []
+    y_data_min_eef_rpy_x = []
+    y_data_max_eef_rpy_y = []
+    y_data_min_eef_rpy_y = []
+    y_data_max_eef_rpy_z = []
+    y_data_min_eef_rpy_z = []
     fig = plt.figure(figsize=(20, 10))
     
     env.first_reset()
+
+    ax1 = fig.add_subplot(4, 3, 1)
+    ax1.plot(x_data, y_data, 'r-', label="rewards")
+    ax1.set_xlabel("episodes")
+    ax1.set_ylabel("ave_return")
+    ax1.grid(axis='both')
+    ax1.legend(loc=2)
+    ax2 = fig.add_subplot(4, 3, 2)
+    ax2.plot(x_data_v, y_data_v, 'b-', label="v_loss")
+    ax2.set_xlabel("episodes")
+    ax2.set_ylabel("ave_val_loss")
+    ax2.grid(axis='both')
+    ax2.legend(loc=2)
+    ax3 = fig.add_subplot(4, 3, 3)
+    ax3.plot(x_data_p, y_data_p, 'g-', label="p_loss")
+    ax3.set_xlabel("episodes")
+    ax3.set_ylabel("ave_pol_loss")
+    ax3.grid(axis='both')
+    ax3.legend(loc=2)
+    ax4 = fig.add_subplot(4, 3, 4)
+    ax4.plot(x_data_e, y_data_e, 'c-', label="entropy")
+    ax4.set_xlabel("episodes")
+    ax4.set_ylabel("entropy")
+    ax4.grid(axis='both')
+    ax4.legend(loc=3)
+    ax5 = fig.add_subplot(4, 3, 5)
+    ax5.plot(x_data_k, y_data_k, 'r-', label="knob")
+    ax5.plot(x_data_k, y_data_d, 'b-', label="door")
+    ax5.set_xlabel("episodes")
+    ax5.set_ylabel("max_knob&door_rotation")
+    ax5.grid(axis='both')
+    ax5.legend(loc=2)
+    ax6 = fig.add_subplot(4, 3, 6)
+    ax6.plot(x_data_a, y_data_max_wrist3, 'r-', linestyle="solid", label="w3")
+    ax6.plot(x_data_a, y_data_min_wrist3, 'r-', linestyle="dashed")
+    ax6.plot(x_data_a, y_data_max_wrist2, 'b-', linestyle="solid", label="w2")
+    ax6.plot(x_data_a, y_data_min_wrist2, 'b-', linestyle="dashed")
+    ax6.plot(x_data_a, y_data_max_wrist1, 'g-', linestyle="solid", label="w1")
+    ax6.plot(x_data_a, y_data_min_wrist1, 'g-', linestyle="dashed")
+    ax6.plot(x_data_a, y_data_max_elb, 'c-', linestyle="solid", label="el")
+    ax6.plot(x_data_a, y_data_min_elb, 'c-', linestyle="dashed")
+    ax6.plot(x_data_a, y_data_max_shl, 'm-', linestyle="solid", label="shl")
+    ax6.plot(x_data_a, y_data_min_shl, 'm-', linestyle="dashed")
+    ax6.plot(x_data_a, y_data_max_shp, 'k-', linestyle="solid", label="shp")
+    ax6.plot(x_data_a, y_data_min_shp, 'k-', linestyle="dashed")
+    ax6.set_xlabel("episodes")
+    ax6.set_ylabel("max&min_action")
+    ax6.grid(axis='both')
+    ax6.legend(loc=2)
+    ax7 = fig.add_subplot(4, 3, 7)
+    ax7.plot(x_data_f, y_data_max_force_x, 'r-', linestyle="solid", label="fx")
+    ax7.plot(x_data_f, y_data_min_force_x, 'r-', linestyle="dashed")
+    ax7.plot(x_data_f, y_data_max_force_y, 'b-', linestyle="solid", label="fy")
+    ax7.plot(x_data_f, y_data_min_force_y, 'b-', linestyle="dashed")
+    ax7.plot(x_data_f, y_data_max_force_z, 'g-', linestyle="solid", label="fz")
+    ax7.plot(x_data_f, y_data_min_force_z, 'g-', linestyle="dashed")
+    ax7.set_xlabel("episodes")
+    ax7.set_ylabel("max&min_force")
+    ax7.grid(axis='both')
+    ax7.legend(loc=3)
+    ax8 = fig.add_subplot(4, 3, 8)
+    ax8.plot(x_data_f, y_data_max_torque_x, 'r-', linestyle="solid", label="tqx")
+    ax8.plot(x_data_f, y_data_min_torque_x, 'r-', linestyle="dashed")
+    ax8.plot(x_data_f, y_data_max_torque_y, 'b-', linestyle="solid", label="tqy")
+    ax8.plot(x_data_f, y_data_min_torque_y, 'b-', linestyle="dashed")
+    ax8.plot(x_data_f, y_data_max_torque_z, 'g-', linestyle="solid", label="tqz")
+    ax8.plot(x_data_f, y_data_min_torque_z, 'g-', linestyle="dashed")
+    ax8.set_xlabel("episodes")
+    ax8.set_ylabel("max&min_torque")
+    ax8.grid(axis='both')
+    ax8.legend(loc=3)
+    ax9 = fig.add_subplot(4, 3, 9)
+    ax9.plot(x_data_f, y_data_max_taxel0, 'r-', linestyle="solid", label="txl0")
+    ax9.plot(x_data_f, y_data_min_taxel0, 'r-', linestyle="dashed")
+    ax9.plot(x_data_f, y_data_max_taxel1, 'b-', linestyle="solid", label="txl1")
+    ax9.plot(x_data_f, y_data_min_taxel1, 'b-', linestyle="dashed")
+    ax9.set_xlabel("episodes")
+    ax9.set_ylabel("min&max_taxel0&1")
+    ax9.grid(axis='both')
+    ax9.legend(loc=2)
+    ax10 = fig.add_subplot(4, 3, 10)
+    ax10.plot(x_data_f, y_data_step, 'r-', linestyle="solid", label="step")
+    ax10.plot(x_data_f, y_data_max_act_correct, 'b-', linestyle="solid", label="act_correct")
+    ax10.plot(x_data_f, y_data_min_act_correct, 'b-', linestyle="dashed")
+    ax10.plot(x_data_f, y_data_max_door_tolerance, 'g-', linestyle="solid", label="door_tolerance")
+    ax10.plot(x_data_f, y_data_min_door_tolerance, 'g-', linestyle="dashed")
+    ax10.set_xlabel("episodes")
+    ax10.set_ylabel("step&act_correct&door_tolerace")
+    ax10.grid(axis='both')
+    ax10.legend(loc=2)
+    ax11 = fig.add_subplot(4, 3, 11)
+    ax11.plot(x_data_f, y_data_max_eef_x, 'r-', linestyle="solid", label="eef_x")
+    ax11.plot(x_data_f, y_data_min_eef_x, 'r-', linestyle="dashed")
+    ax11.plot(x_data_f, y_data_max_eef_y, 'b-', linestyle="solid", label="eef_y")
+    ax11.plot(x_data_f, y_data_min_eef_y, 'b-', linestyle="dashed")
+    ax11.plot(x_data_f, y_data_max_eef_z, 'g-', linestyle="solid", label="eef_z")
+    ax11.plot(x_data_f, y_data_min_eef_z, 'g-', linestyle="dashed")
+    ax11.set_xlabel("episodes")
+    ax11.set_ylabel("max&min_eef_xyz")
+    ax11.grid(axis='both')
+    ax11.legend(loc=3)
+    ax12 = fig.add_subplot(4, 3, 12)
+    ax12.plot(x_data_f, y_data_max_eef_rpy_x, 'r-', linestyle="solid", label="rpy_x")
+    ax12.plot(x_data_f, y_data_min_eef_rpy_x, 'r-', linestyle="dashed")
+    ax12.plot(x_data_f, y_data_max_eef_rpy_y, 'b-', linestyle="solid", label="rpy_y")
+    ax12.plot(x_data_f, y_data_min_eef_rpy_y, 'b-', linestyle="dashed")
+    ax12.plot(x_data_f, y_data_max_eef_rpy_z, 'g-', linestyle="solid", label="rpy_z")
+    ax12.plot(x_data_f, y_data_min_eef_rpy_z, 'g-', linestyle="dashed")
+    ax12.set_xlabel("episodes")
+    ax12.set_ylabel("max&min_eef_rpy")
+    ax12.grid(axis='both')
+    ax12.legend(loc=3)
 
     for update in range(nupdates+1):
         trajectories = run_policy(env, episodes=episode_size)
@@ -247,12 +401,12 @@ def main():
         avg_entropy_list.append(entropy)
         avg_max_knob_rotation_list.append(env.max_knob_rotation)
         avg_max_door_rotation_list.append(env.max_door_rotation)
-        max_wrist3_list.append(env.max_wirst3)
-        min_wrist3_list.append(env.min_wirst3)
-        max_wrist2_list.append(env.max_wirst2)
-        min_wrist2_list.append(env.min_wirst2)
-        max_wrist1_list.append(env.max_wirst1)
-        min_wrist1_list.append(env.min_wirst1)
+        max_wrist3_list.append(env.max_wrist3)
+        min_wrist3_list.append(env.min_wrist3)
+        max_wrist2_list.append(env.max_wrist2)
+        min_wrist2_list.append(env.min_wrist2)
+        max_wrist1_list.append(env.max_wrist1)
+        min_wrist1_list.append(env.min_wrist1)
         max_elb_list.append(env.max_elb)
         min_elb_list.append(env.min_elb)
         max_shl_list.append(env.max_shl)
@@ -271,6 +425,27 @@ def main():
         min_torque_y_list.append(env.min_torque_y)
         max_torque_z_list.append(env.max_torque_z)
         min_torque_z_list.append(env.min_torque_z)
+        min_taxel0_list.append(env.min_taxel0)
+        max_taxel0_list.append(env.max_taxel0)
+        min_taxel1_list.append(env.min_taxel1)
+        max_taxel1_list.append(env.max_taxel1)
+        step_list.append(returns.shape)
+        min_act_correct_list.append(env.min_act_correct_n)
+        max_act_correct_list.append(env.max_act_correct_n)
+        min_door_tolerance_list.append(env.min_door_tolerance)
+        max_door_tolerance_list.append(env.max_door_tolerance)
+        max_eef_x_list.append(env.max_eef_x)
+        min_eef_x_list.append(env.min_eef_x)
+        max_eef_y_list.append(env.max_eef_y)
+        min_eef_y_list.append(env.min_eef_y)
+        max_eef_z_list.append(env.max_eef_z)
+        min_eef_z_list.append(env.min_eef_z)
+        max_eef_rpy_x_list.append(env.max_eef_rpy_x)
+        min_eef_rpy_x_list.append(env.min_eef_rpy_x)
+        max_eef_rpy_y_list.append(env.max_eef_rpy_y)
+        min_eef_rpy_y_list.append(env.min_eef_rpy_y)
+        max_eef_rpy_z_list.append(env.max_eef_rpy_z)
+        min_eef_rpy_z_list.append(env.min_eef_rpy_z)
 
         if (update%1) == 0:
             print('[{}/{}] n_step : {}, return : {:.3f}, value loss : {:.3f}, policy loss : {:.3f}, policy kl : {:.5f}, policy entropy : {:.3f}'.format(
@@ -314,30 +489,36 @@ def main():
         y_data_min_torque_y.append(np.mean(min_torque_y_list))
         y_data_max_torque_z.append(np.mean(max_torque_z_list))
         y_data_min_torque_z.append(np.mean(min_torque_z_list))
+        y_data_min_taxel0.append(np.mean(min_taxel0_list))
+        y_data_max_taxel0.append(np.mean(max_taxel0_list))
+        y_data_min_taxel1.append(np.mean(min_taxel1_list))
+        y_data_max_taxel1.append(np.mean(max_taxel1_list))
+        y_data_step.append(np.mean(step_list))
+        y_data_min_act_correct.append(np.mean(min_act_correct_list))
+        y_data_max_act_correct.append(np.mean(max_act_correct_list))
+        y_data_min_door_tolerance.append(np.mean(min_door_tolerance_list))
+        y_data_max_door_tolerance.append(np.mean(max_door_tolerance_list))
+        y_data_max_eef_x.append(np.mean(max_eef_x_list))
+        y_data_min_eef_x.append(np.mean(min_eef_x_list))
+        y_data_max_eef_y.append(np.mean(max_eef_y_list))
+        y_data_min_eef_y.append(np.mean(min_eef_y_list))
+        y_data_max_eef_z.append(np.mean(max_eef_z_list))
+        y_data_min_eef_z.append(np.mean(min_eef_z_list))
+        y_data_max_eef_rpy_x.append(np.mean(max_eef_rpy_x_list))
+        y_data_min_eef_rpy_x.append(np.mean(min_eef_rpy_x_list))
+        y_data_max_eef_rpy_y.append(np.mean(max_eef_rpy_y_list))
+        y_data_min_eef_rpy_y.append(np.mean(min_eef_rpy_y_list))
+        y_data_max_eef_rpy_z.append(np.mean(max_eef_rpy_z_list))
+        y_data_min_eef_rpy_z.append(np.mean(min_eef_rpy_z_list))
+
 
         if (update%1) == 0:
-            ax1 = fig.add_subplot(2, 4, 1)
             ax1.plot(x_data, y_data, 'r-')
-            ax1.set_xlabel("episodes")
-            ax1.set_ylabel("ave_return")
-            ax2 = fig.add_subplot(2, 4, 2)
             ax2.plot(x_data_v, y_data_v, 'b-')
-            ax2.set_xlabel("episodes")
-            ax2.set_ylabel("ave_val_loss")
-            ax3 = fig.add_subplot(2, 4, 3)
-            ax3.plot(x_data_p, y_data_p, 'g-')
-            ax3.set_xlabel("episodes")
-            ax3.set_ylabel("ave_pol_loss")
-            ax4 = fig.add_subplot(2, 4, 4)
+            ax3.plot(x_data_p, y_data_p, 'g-',)
             ax4.plot(x_data_e, y_data_e, 'c-')
-            ax4.set_xlabel("episodes")
-            ax4.set_ylabel("entropy")
-            ax5 = fig.add_subplot(2, 4, 5)
             ax5.plot(x_data_k, y_data_k, 'r-')
             ax5.plot(x_data_k, y_data_d, 'b-')
-            ax5.set_xlabel("episodes")
-            ax5.set_ylabel("max_knob&door_rotation")
-            ax6 = fig.add_subplot(2, 4, 6)
             ax6.plot(x_data_a, y_data_max_wrist3, 'r-', linestyle="solid")
             ax6.plot(x_data_a, y_data_min_wrist3, 'r-', linestyle="dashed")
             ax6.plot(x_data_a, y_data_max_wrist2, 'b-', linestyle="solid")
@@ -350,33 +531,46 @@ def main():
             ax6.plot(x_data_a, y_data_min_shl, 'm-', linestyle="dashed")
             ax6.plot(x_data_a, y_data_max_shp, 'k-', linestyle="solid")
             ax6.plot(x_data_a, y_data_min_shp, 'k-', linestyle="dashed")
-            ax6.set_xlabel("episodes")
-            ax6.set_ylabel("max&min_action")
-            ax7 = fig.add_subplot(2, 4, 7)
             ax7.plot(x_data_f, y_data_max_force_x, 'r-', linestyle="solid")
             ax7.plot(x_data_f, y_data_min_force_x, 'r-', linestyle="dashed")
             ax7.plot(x_data_f, y_data_max_force_y, 'b-', linestyle="solid")
             ax7.plot(x_data_f, y_data_min_force_y, 'b-', linestyle="dashed")
             ax7.plot(x_data_f, y_data_max_force_z, 'g-', linestyle="solid")
             ax7.plot(x_data_f, y_data_min_force_z, 'g-', linestyle="dashed")
-            ax7.set_xlabel("episodes")
-            ax7.set_ylabel("max&min_force")
-            ax8 = fig.add_subplot(2, 4, 8)
             ax8.plot(x_data_f, y_data_max_torque_x, 'r-', linestyle="solid")
             ax8.plot(x_data_f, y_data_min_torque_x, 'r-', linestyle="dashed")
             ax8.plot(x_data_f, y_data_max_torque_y, 'b-', linestyle="solid")
             ax8.plot(x_data_f, y_data_min_torque_y, 'b-', linestyle="dashed")
             ax8.plot(x_data_f, y_data_max_torque_z, 'g-', linestyle="solid")
             ax8.plot(x_data_f, y_data_min_torque_z, 'g-', linestyle="dashed")
-            ax8.set_xlabel("episodes")
-            ax8.set_ylabel("max&min_torque")
+            ax9.plot(x_data_f, y_data_max_taxel0, 'r-', linestyle="solid")
+            ax9.plot(x_data_f, y_data_min_taxel0, 'r-', linestyle="dashed")
+            ax9.plot(x_data_f, y_data_max_taxel1, 'b-', linestyle="solid")
+            ax9.plot(x_data_f, y_data_min_taxel1, 'b-', linestyle="dashed")
+            ax10.plot(x_data_f, y_data_step, 'r-', linestyle="solid")
+            ax10.plot(x_data_f, y_data_max_act_correct, 'b-', linestyle="solid")
+            ax10.plot(x_data_f, y_data_min_act_correct, 'b-', linestyle="dashed")
+            ax10.plot(x_data_f, y_data_max_door_tolerance, 'g-', linestyle="solid")
+            ax10.plot(x_data_f, y_data_min_door_tolerance, 'g-', linestyle="dashed")
+            ax11.plot(x_data_f, y_data_max_eef_x, 'r-', linestyle="solid")
+            ax11.plot(x_data_f, y_data_min_eef_x, 'r-', linestyle="dashed")
+            ax11.plot(x_data_f, y_data_max_eef_y, 'b-', linestyle="solid")
+            ax11.plot(x_data_f, y_data_min_eef_y, 'b-', linestyle="dashed")
+            ax11.plot(x_data_f, y_data_max_eef_z, 'g-', linestyle="solid")
+            ax11.plot(x_data_f, y_data_min_eef_z, 'g-', linestyle="dashed")
+            ax12.plot(x_data_f, y_data_max_eef_rpy_x, 'r-', linestyle="solid")
+            ax12.plot(x_data_f, y_data_min_eef_rpy_x, 'r-', linestyle="dashed")
+            ax12.plot(x_data_f, y_data_max_eef_rpy_y, 'b-', linestyle="solid")
+            ax12.plot(x_data_f, y_data_min_eef_rpy_y, 'b-', linestyle="dashed")
+            ax12.plot(x_data_f, y_data_max_eef_rpy_z, 'g-', linestyle="solid")
+            ax12.plot(x_data_f, y_data_min_eef_rpy_z, 'g-', linestyle="dashed")
 
             fig.subplots_adjust(hspace=0.3, wspace=0.4)
             plt.draw()
             plt.pause(1e-17)
             plt.savefig("./results/ppo_with_gae_list.png")
 
-        if (np.mean(avg_return_list) > 12800): # Threshold return to success 
+        if (np.mean(avg_max_knob_rotation_list) > 0.8 and np.mean(avg_max_door_rotation_list) > 0.2): # Threshold return to success 
             print('[{}/{}] return : {:.3f}, value loss : {:.3f}, policy loss : {:.3f}'.format(update,nupdates, np.mean(avg_return_list), np.mean(avg_val_loss_list), np.mean(avg_pol_loss_list)))
             print('The problem is solved with {} episodes'.format(update*episode_size))
             break

@@ -798,15 +798,15 @@
                                         <gripper_link>${name}_left_follower</gripper_link>
                                   </arm>
 	                          <forces_angle_tolerance>100</forces_angle_tolerance>
-	                          <update_rate>0.01</update_rate>
-	                          <grip_count_threshold>0.01</grip_count_threshold>
+	                          <update_rate>0.001</update_rate>
+	                          <grip_count_threshold>0.001</grip_count_threshold>
 	                          <max_grip_count>1</max_grip_count>
-	                          <release_tolerance>0.005</release_tolerance>
-	                          <disable_collisions_on_attach>true</disable_collisions_on_attach>
+	                          <release_tolerance>0.01</release_tolerance>
+	                          <disable_collisions_on_attach>false</disable_collisions_on_attach>
 	                          <contact_topic>__default_topic__</contact_topic>
 	                        </plugin>
-<!-- /pos_traj_controller/command = 100Hz, /gazebo/model_states & /gazebo/link_states = 1kHz, /joint_states = 50Hz -->
 			</gazebo>
+<!-- /pos_traj_controller/command = 100Hz, /gazebo/model_states & /gazebo/link_states = 1kHz, /joint_states = 50Hz -->
 
 
 		</xacro:unless>

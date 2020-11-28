@@ -48,6 +48,8 @@ class UR5Interface:
 
     joint_values_rotate = [1.2271511722945796, -1.7471523185028532, 2.147928955121685, -0.41287096288384983, 1.1990159658338717, -0.25820784403716246]
 
+    joint_after_pull = [1.5997938851995377, -1.9340882496918201, 2.277911783767653, -0.34604704175714396, 1.9609160463454813, -0.14887166325512347]
+
     def __init__(self):
         self.robot = moveit_commander.RobotCommander()
         self.scene = moveit_commander.PlanningSceneInterface()
@@ -63,12 +65,52 @@ class UR5Interface:
 
         # Walls are defined with respect to the coordinate frame of the robot base, with directions 
         # corresponding to standing behind the robot and facing into the table.
-
         rospy.sleep(0.6)
         header = Header()
         header.stamp = rospy.Time.now()
         header.frame_id = 'world'
+        # self.robot.get_planning_frame()
+        table_pose = PoseStamped()
+        table_pose.header = header
+        table_pose.pose.position.x = 0
+        table_pose.pose.position.y = 0
+        table_pose.pose.position.z = -0.0001
+        self.scene.remove_world_object('table')
+        self.scene.add_plane(name='table', pose=table_pose, normal=(0, 0, 1))
+        back_pose = PoseStamped()
+        back_pose.header = header
+        back_pose.pose.position.x = 0
+        back_pose.pose.position.y = -0.25
+        back_pose.pose.position.z = 0
+        self.scene.remove_world_object('backWall')
+        self.scene.add_plane(name='backWall', pose=back_pose, normal=(0, 1, 0))
+        right_pose = PoseStamped()
+        right_pose.header = header
+        right_pose.pose.position.x = 0.2
+        right_pose.pose.position.y = 0
+        right_pose.pose.position.z = 0
+        self.scene.remove_world_object('rightWall')
+        self.scene.add_plane(name='rightWall', pose=right_pose, normal=(1, 0, 0))
+        left_pose = PoseStamped()
+        left_pose.header = header
+        left_pose.pose.position.x = -0.54
+        left_pose.pose.position.y = 0
+        left_pose.pose.position.z = 0
+        self.scene.remove_world_object('leftWall')
+        self.scene.add_plane(name='leftWall', pose=left_pose, normal=(1, 0, 0))
+        rospy.sleep(0.6)
+#        rospy.loginfo(self.scene.get_known_object_names())
 
+    def check_joint_limits(self):
+        """ function to check that the urdf loaded is specifying
+            smaller joint limits (-pi, pi) so that the planner works better """
+        for j in self.joint_names:
+            b = self.robot.get_joint(j).bounds()
+            # If any joint has limits greater than pi then is bad bounds
+            if (b[0] < -(3*np.pi/2)) or (b[1] > (3*np.pi/2)):
+                return False
+
+        return True
 
     def get_pose(self):
         """ get robot end effector pose """
@@ -125,7 +167,7 @@ class UR5Interface:
         self.group.set_pose_target(pose)
         # simulate in rviz then ask user for feedback
         plan = self.group.plan()
-        self.display_trajectory(plan)
+#        self.display_trajectory(plan)
         if (wait == True):
             print("============ Press `Enter` to execute the movement ...")
             raw_input()
