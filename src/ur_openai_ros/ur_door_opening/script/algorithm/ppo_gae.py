@@ -50,7 +50,7 @@ class PPOGAEAgent(object):
         self.counter = 0
 
         # load the parameters 
-        # self.saver.restore(self.sess, './results/ppo_with_gae_model-1000')
+        self.saver.restore(self.sess, './results/ppo_with_gae_model-1500')
 
     def _build_graph(self):
         self.g = tf.Graph()
@@ -65,7 +65,7 @@ class PPOGAEAgent(object):
             self.init = tf.compat.v1.global_variables_initializer()
             self.variables = tf.compat.v1.global_variables()  
             # Create a saver object which will save all the variables
-            self.saver = tf.compat.v1.train.Saver(max_to_keep=10)
+            self.saver = tf.compat.v1.train.Saver(max_to_keep=None)
             
     def _placeholders(self):
         # observations, actions and advantages:
@@ -124,13 +124,13 @@ class PPOGAEAgent(object):
         mu = self.mean
         sigma = self.std
         
-        self.logp = tf.reduce_sum(-0.5*tf.square((y-mu)/sigma)-tf.math.log(sigma)- 0.5*np.log(2.*np.pi),axis=1)
+        self.logp = tf.reduce_sum(-0.5 * tf.square((y - mu) / sigma) - tf.math.log(sigma) - 0.5 * np.log(2. * np.pi), axis=1)
 
         # PROBABILITY WITH OLD (PREVIOUS) PARAMETER
         old_mu_ph = self.old_mean_ph
         old_sigma_ph = self.old_std_ph
                 
-        self.logp_old = tf.reduce_sum(-0.5*tf.square((y-old_mu_ph)/old_sigma_ph)-tf.math.log(old_sigma_ph)- 0.5*np.log(2.*np.pi),axis=1)
+        self.logp_old = tf.reduce_sum(-0.5 * tf.square((y - old_mu_ph) / old_sigma_ph) - tf.math.log(old_sigma_ph) - 0.5 * np.log(2. * np.pi), axis=1)
         
     def _kl_entropy(self):
         delta = 1e-3 # add for preventing from "nan"
@@ -139,22 +139,22 @@ class PPOGAEAgent(object):
  
         log_std_old = tf.math.log(tf.clip_by_value(old_std, 1e-10, 1.0))
         log_std_new = tf.math.log(tf.clip_by_value(std, 1e-10, 1.0))
-        frac_std_old_new = old_std/std
+        frac_std_old_new = old_std / std
 
         # KL DIVERGENCE BETWEEN TWO GAUSSIAN
-        kl = tf.reduce_sum(log_std_new - log_std_old + 0.5*tf.square(frac_std_old_new) + 0.5*tf.square((mean - old_mean)/std)- 0.5,axis=1)
+        kl = tf.reduce_sum(log_std_new - log_std_old + 0.5 * tf.square(frac_std_old_new) + 0.5 * tf.square((mean - old_mean) / std) - 0.5, axis=1)
         self.kl = tf.reduce_mean(kl) + 1e-7
         
         # ENTROPY OF GAUSSIAN
-        entropy = tf.reduce_sum(log_std_new + 0.5 + 0.5*np.log(2*np.pi + delta),axis=1)
+        entropy = tf.reduce_sum(log_std_new + 0.5 + 0.5 * np.log(2 * np.pi + delta), axis=1)
         self.entropy = tf.reduce_mean(entropy) + 1e-7
             
     def _loss_train_op(self):
         
         # REINFORCE OBJECTIVE
         ratio = tf.exp(self.logp - self.logp_old)
-        cliped_ratio = tf.clip_by_value(ratio,clip_value_min=1-self.clip_range,clip_value_max=1+self.clip_range)
-        self.policy_loss = -tf.reduce_mean(tf.minimum(self.adv_ph*ratio,self.adv_ph*cliped_ratio)) + 1e-7 # add 1e-10 for preventing from "nan"
+        cliped_ratio = tf.clip_by_value(ratio, clip_value_min = 1 - self.clip_range, clip_value_max = 1 + self.clip_range)
+        self.policy_loss = -tf.reduce_mean(tf.minimum(self.adv_ph * ratio, self.adv_ph * cliped_ratio)) + 1e-7 # Compute 1_Policy  #add 1e-10 for preventing from "nan"
         
         # POLICY OPTIMIZER
         self.pol_var_list = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES, scope="policy")
@@ -162,7 +162,7 @@ class PPOGAEAgent(object):
         self.train_policy = optimizer.minimize(self.policy_loss, var_list=self.pol_var_list)
             
         # L2 LOSS
-        self.value_loss = tf.reduce_mean(0.5*tf.square(self.value - self.ret_ph))
+        self.value_loss = tf.reduce_mean(0.5 * tf.square(self.value - self.ret_ph))
             
         # VALUE OPTIMIZER 
         self.val_var_list = tf.compat.v1.get_collection(tf.compat.v1.GraphKeys.GLOBAL_VARIABLES, scope="value")
@@ -183,7 +183,7 @@ class PPOGAEAgent(object):
     
     def get_action(self, obs): # SAMPLE FROM POLICY
         feed_dict = {self.obs_ph: obs}
-        sampled_action = self.sess.run(self.sample_action,feed_dict=feed_dict)
+        sampled_action = self.sess.run(self.sample_action, feed_dict=feed_dict)
         return sampled_action[0] / act_step
 # /10:   [action]', array([-0.01992016,  0.10500866,  0.00853405,  0.02726892, -0.12092558, 0.02108609])
 # /500:   [action]', array([0.0010571,  -0.00022959,  -0.00092911,  -0.00055518, -0.0012934, -0.001190])  -> Maxdelta force(6.5, 1.8, 16.7), torque(0.65, 4.4, 0.17)
@@ -191,7 +191,7 @@ class PPOGAEAgent(object):
     
     def control(self, obs): # COMPUTE MEAN
         feed_dict = {self.obs_ph: obs}
-        best_action = self.sess.run(self.mean,feed_dict=feed_dict)
+        best_action = self.sess.run(self.mean, feed_dict=feed_dict)
         return best_action
 
     def _cnn_layer(self):
@@ -246,14 +246,14 @@ class PPOGAEAgent(object):
 
     def update(self, observes, actions, advantages, returns, batch_size): # TRAIN POLICY
         
-        num_batches = max(observes.shape[0] // batch_size, 1)
-        batch_size = observes.shape[0] // num_batches
+        num_batches = max(observes.shape[0] // batch_size, 1) # compute the number of batches
+        batch_size = observes.shape[0] // num_batches         # recalculate batch_size again
         
-        old_means_np, old_std_np = self.sess.run([self.mean, self.std],{self.obs_ph: observes}) # COMPUTE OLD PARAMTER
+        old_means_np, old_std_np = self.sess.run([self.mean, self.std],{self.obs_ph: observes}) # COMPUTE OLD PARAMTER (self.mean = mean_action, self.std = a random value for trick?)
 
-        for e in range(self.epochs):
+        for e in range(self.epochs): # repeat for self.epochs times
             observes, actions, advantages, returns, old_means_np, old_std_np = shuffle(observes, actions, advantages, returns, old_means_np, old_std_np, random_state=self.seed)
-            for j in range(num_batches): 
+            for j in range(num_batches): # pick up the data set and compute "policy" and "value" for number of batches
                 start = j * batch_size
                 end = (j + 1) * batch_size
                 feed_dict = {self.obs_ph: observes[start:end,:],
@@ -264,7 +264,7 @@ class PPOGAEAgent(object):
                      self.old_mean_ph: old_means_np[start:end,:],
                      self.policy_lr_ph: self.policy_lr,
                      self.value_lr_ph: self.value_lr}        
-                self.sess.run([self.train_policy,self.train_value], feed_dict)
+                self.sess.run([self.train_policy, self.train_value], feed_dict) # compute "policy" and "value" by minimize the policy_loss and value_loss using Adamoptimizer
             
         feed_dict = {self.obs_ph: observes,
              self.act_ph: actions,
@@ -273,33 +273,15 @@ class PPOGAEAgent(object):
              self.old_std_ph: old_std_np,
              self.old_mean_ph: old_means_np,
              self.policy_lr_ph: self.policy_lr,
-             self.value_lr_ph: self.value_lr}        
+             self.value_lr_ph: self.value_lr}        # update the feed_dict which added old_std, old_means, policy_lr, and value_lr
        
         policy_loss, value_loss, kl, entropy  = self.sess.run([self.policy_loss, self.value_loss, self.kl, self.entropy], feed_dict)
         
         # save the parameters
 	self.counter = self.counter + 1
 
-        if self.counter == 1 * save_step:
-            self.saver.save(self.sess, './results/ppo_with_gae_model', global_step= 1 * save_step)
-        elif self.counter == 2 * save_step:
-            self.saver.save(self.sess, './results/ppo_with_gae_model', global_step= 2 * save_step)
-        elif self.counter == 3 * save_step:
-            self.saver.save(self.sess, './results/ppo_with_gae_model', global_step= 3 * save_step)
-        elif self.counter == 4 * save_step:
-            self.saver.save(self.sess, './results/ppo_with_gae_model', global_step= 4 * save_step)
-        elif self.counter == 5 * save_step:
-            self.saver.save(self.sess, './results/ppo_with_gae_model', global_step= 5 * save_step)
-        elif self.counter == 6 * save_step:
-            self.saver.save(self.sess, './results/ppo_with_gae_model', global_step= 6 * save_step)
-        elif self.counter == 7 * save_step:
-            self.saver.save(self.sess, './results/ppo_with_gae_model', global_step= 7 * save_step)
-        elif self.counter == 8 * save_step:
-            self.saver.save(self.sess, './results/ppo_with_gae_model', global_step= 8 * save_step)
-        elif self.counter == 9 * save_step:
-            self.saver.save(self.sess, './results/ppo_with_gae_model', global_step= 9 * save_step)
-        elif self.counter == 10 * save_step:
-            self.saver.save(self.sess, './results/ppo_with_gae_model', global_step= 10 * save_step)
+        if (self.counter%save_step) == 0:
+            self.saver.save(self.sess, './results/ppo_with_gae_model', global_step= self.counter)
 
         return policy_loss, value_loss, kl, entropy
     

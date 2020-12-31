@@ -99,20 +99,20 @@
         <joint name="wrist_3_joint" value="1.5709174034899702" />
     </group_state>
     <group_state name="grasp_rotate" group="manipulator">
-        <joint name="elbow_joint" value="2.1438566966530352" />
-        <joint name="shoulder_lift_joint" value="-1.7469892316131368" />
-        <joint name="shoulder_pan_joint" value="1.2168549330235976" />
-        <joint name="wrist_1_joint" value="-0.4029605278499071" />
-        <joint name="wrist_2_joint" value="1.18284603228705" />
-        <joint name="wrist_3_joint" value="-0.25820784403716246" />
+        <joint name="elbow_joint" value="2.4377209990850974" />
+        <joint name="shoulder_lift_joint" value="-1.4496597816566892" />
+        <joint name="shoulder_pan_joint" value="1.488122534496775" />
+        <joint name="wrist_1_joint" value="2.168370898415174" />
+        <joint name="wrist_2_joint" value="-1.4670589583209175" />
+        <joint name="wrist_3_joint" value="2.5709174034899702" />
     </group_state>
     <group_state name="after_pull" group="manipulator">
-        <joint name="elbow_joint" value="2.277911783767653" />
-        <joint name="shoulder_lift_joint" value="-1.9340882496918201" />
-        <joint name="shoulder_pan_joint" value="1.5997938851995377" />
-        <joint name="wrist_1_joint" value="-0.34604704175714396" />
-        <joint name="wrist_2_joint" value="1.9609160463454813" />
-        <joint name="wrist_3_joint" value="-0.14887166325512347" />
+        <joint name="elbow_joint" value="2.470747950622256" />
+        <joint name="shoulder_lift_joint" value="-1.4724165911604175" />
+        <joint name="shoulder_pan_joint" value="1.612635433881735" />
+        <joint name="wrist_1_joint" value="2.15165861084186" />
+        <joint name="wrist_2_joint" value="-1.7013942143425345" />
+        <joint name="wrist_3_joint" value="2.575005366191597" />
     </group_state>
 
    <!-- definition of gripper(add) -->

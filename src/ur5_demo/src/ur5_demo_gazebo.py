@@ -248,7 +248,7 @@ def test_move_ur5_continuous():
         ur5.goto_pose_target(P3_pose, wait=False)
         time.sleep(INTER_COMMAND_DELAY)
 
-curr_demo = 8
+curr_demo = 7
 if __name__ == '__main__': 
     if (curr_demo == 1):
         test_move_home()
