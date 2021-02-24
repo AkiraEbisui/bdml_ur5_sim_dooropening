@@ -81,9 +81,14 @@ This will (i) launch the ur5_bringup to open the TCP bridge to UR5, and (ii) lau
 
 3. Run RL script
 ```console 
-python ppo_gae_main.py
+python ppo_gae_main.py sys.argv[1]
 ```
-This will try to move the UR5 and the robotiq gripper to open the door.
+
+4. Run RL test script
+```console 
+python ppo_gae_test_main.py sys.argv[1]
+```
+*Put .data-00000-of-00001, .index, and, .meta files in "results" folder to load. This will try to move the UR5 and the robotiq gripper to open the door. *sys.argv[1] is a folder name for saving the result
 
 
 ## Running this code for position control simulation:

@@ -74,40 +74,40 @@ class UR5Interface:
         table_pose.header = header
         table_pose.pose.position.x = 0
         table_pose.pose.position.y = 0
-        table_pose.pose.position.z = 0.02 # Optimaized (0.03 NG) -0.0001 # -0.1
+        table_pose.pose.position.z = 2 # 0.02 # Optimaized (0.03 NG) -0.0001 # -0.1
         self.scene.remove_world_object('table')
         self.scene.add_plane(name='table', pose=table_pose, normal=(0, 0, 1))
         upper_pose = PoseStamped()
         upper_pose.header = header
         upper_pose.pose.position.x = 0
         upper_pose.pose.position.y = 0
-        upper_pose.pose.position.z = 0.6 # Optimized (0.55 NG)
+        upper_pose.pose.position.z = 2 # 0.6 # Optimized (0.55 NG)
         self.scene.remove_world_object('upper')
         self.scene.add_plane(name='upper', pose=upper_pose, normal=(0, 0, 1))
         back_pose = PoseStamped()
         back_pose.header = header
         back_pose.pose.position.x = 0
-        back_pose.pose.position.y = -0.25 # -0.25
+        back_pose.pose.position.y = -2 # -0.25
         back_pose.pose.position.z = 0
         self.scene.remove_world_object('backWall')
         self.scene.add_plane(name='backWall', pose=back_pose, normal=(0, 1, 0))
         front_pose = PoseStamped()
         front_pose.header = header
         front_pose.pose.position.x = 0
-        front_pose.pose.position.y = 0.52 # Optimized (0.55 NG)
+        front_pose.pose.position.y = 2 # 0.52 # Optimized (0.55 NG)
         front_pose.pose.position.z = 0
         self.scene.remove_world_object('frontWall')
         self.scene.add_plane(name='frontWall', pose=front_pose, normal=(0, 1, 0))
         right_pose = PoseStamped()
         right_pose.header = header
-        right_pose.pose.position.x = 0.2 # 0.2
+        right_pose.pose.position.x = 2 # 0.2
         right_pose.pose.position.y = 0
         right_pose.pose.position.z = 0
         self.scene.remove_world_object('rightWall')
         self.scene.add_plane(name='rightWall', pose=right_pose, normal=(1, 0, 0))
         left_pose = PoseStamped()
         left_pose.header = header
-        left_pose.pose.position.x = -0.54 # -0.54
+        left_pose.pose.position.x = -2 # -0.54
         left_pose.pose.position.y = 0
         left_pose.pose.position.z = 0
         self.scene.remove_world_object('leftWall')

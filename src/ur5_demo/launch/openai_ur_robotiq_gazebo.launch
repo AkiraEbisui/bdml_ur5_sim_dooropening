@@ -2,7 +2,7 @@
 <launch>
   <!-- By default, we are not in debug mode -->
  <arg name="paused" default="false"/>
- <arg name="gui" default="true"/>
+ <arg name="gui" default="false"/>
  <arg name="debug" default="false" />
  <arg name="limited" default="true"/>
  <arg name="sim" default="true"/>
@@ -20,11 +20,11 @@
     <arg name="limited" value="$(arg limited)"/>
   </include>
 
-  <!-- Run Rviz and load the default config to see the state of the move_group node -->
+  <!-- Run Rviz and load the default config to see the state of the move_group node 
   <include file="$(find ur5_moveit_config)/launch/moveit_rviz.launch">
     <arg name="config" value="true"/>
     <arg name="debug" value="$(arg debug)"/>
-  </include>
+  </include> -->
 
   <!-- Load the parameters for the algorithm -->
   <rosparam command="load" file="$(find ur_door_opening)/config/door_opening_params.yaml" />

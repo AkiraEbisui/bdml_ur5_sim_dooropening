@@ -2,14 +2,16 @@
 <robot name="example" xmlns:xacro="http://ros.org/wiki/xacro">
 
 	<xacro:include filename="$(find robotiq_2f_model)/model/robotiq_2f_85.urdf.xacro" />
-
 <!--	<link name="world"/>
 	<xacro:robotiq_2f_85 name="simple_gripper" parent="world" precise_collision="false" adaptive_transmission="false">
 		<origin xyz="0 0 0" rpy="0 0 0"/>  -->
-
 	<xacro:robotiq_2f_85 name="simple_gripper" parent="wrist_3_link" precise_collision="true" adaptive_transmission="false">
-<!--  0.0823 = wrist_3_length = d6 -->
-                <origin xyz="0 0.0823 0" rpy="${pi/-2.0} ${pi/2.0} 0"/>
+<!--  0.037 = FT300_length -->
+<!--  0.0823 + 0.037 = 0.1193 -->
+                <origin xyz="0 0.1193 0" rpy="${pi/-2.0} ${pi/2.0} 0"/>
+<!--                <origin xyz="0 0.0823 0" rpy="${pi/-2.0} ${pi/2.0} 0"/> -->
 	</xacro:robotiq_2f_85>
+
+
 
 </robot>

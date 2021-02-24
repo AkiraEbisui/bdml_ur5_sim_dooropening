@@ -79,7 +79,8 @@
     <model name='hinged_door'>
 
       <link name='frame'>
-        <pose frame=''>-0.035 0.116 0 0 -0 0</pose>
+<!--        <pose frame=''>-0.035 0.116 0 0 -0 0</pose> -->
+        <pose frame=''>0.013 0.116 0 0 -0 0</pose>
         <collision name='collision'>
           <pose frame=''>0 -0.06858 0 0 -0 0</pose>
           <geometry>
@@ -161,7 +162,8 @@
       </link>
 
       <link name='door'>
-        <pose frame=''>-0.025 0.08 0.508 3.14159 -0 1.57</pose>
+<!--        <pose frame=''>-0.025 0.08 0.508 3.14159 -0 1.57</pose> -->
+        <pose frame=''>0.023 0.08 0.508 3.14159 -0 1.57</pose>
         <inertial>
           <mass>41.3256</mass>
           <pose frame=''>0.4569 0.0349 1.016 0 -0 0</pose>
@@ -180,6 +182,7 @@
             <izz>3</izz>
           </inertia>
         </inertial>
+
         <collision name='collision'>
           <pose frame=''>0 -0.06858 0 0 -0 0</pose>
           <geometry>
@@ -202,6 +205,7 @@
             </friction>
           </surface>
         </collision>
+
         <visual name='visual'>
           <pose frame=''>0 -0.06858 0 0 -0 0</pose>
           <geometry>
@@ -217,7 +221,8 @@
       </link>
 
       <link name='handles'>
-        <pose frame=''>-0.085 0.155 0.2748 -3.14159 -0 -1.57159</pose>
+<!--        <pose frame=''>-0.085 0.155 0.2748 -3.14159 -0 -1.57159</pose> -->
+        <pose frame=''>-0.037 0.155 0.2748 -3.14159 -0 -1.57159</pose>
         <collision name='handle1_collision'>
           <pose frame=''>0.015 -0.015 0 -1.57 0 0</pose>
           <geometry>
@@ -324,12 +329,13 @@
       </link>
 
       <link name='latch'>
-        <pose frame=''>-0.022 0.08 0.2725 1.5708 -0 0</pose>
+<!--        <pose frame=''>-0.022 0.08 0.2725 1.5708 -0 0</pose> -->
+        <pose frame=''>0.026 0.08 0.2725 1.5708 -0 0</pose> <!-- 0.026 0.023 0.019 -->
         <collision name='latch_collision'>
           <pose frame=''>0 0 0 0 -0 0</pose>
           <geometry>
             <cylinder>
-              <radius>0.005</radius> <!--0.009-->
+              <radius>0.011</radius> <!--0.009 0.005-->
               <length>0.015</length>  <!--0.02-->
             </cylinder>
           </geometry>
@@ -377,7 +383,7 @@
           <pose frame=''>0 0 0 0 -0 0</pose>
           <geometry>
             <cylinder>
-              <radius>0.005</radius> <!--0.009-->
+              <radius>0.011</radius> <!--0.009 0.005-->
               <length>0.015</length>  <!--0.02-->
             </cylinder>
           </geometry>
@@ -399,7 +405,8 @@
       </link>
 
       <link name='imu_link'>
-        <pose frame=''>-0.005 0.14 0.325 0 -0 0</pose>
+<!--        <pose frame=''>-0.005 0.14 0.325 0 -0 0</pose> -->
+        <pose frame=''>0.043 0.14 0.325 0 -0 0</pose>
         <inertial>
           <mass>0.1</mass>
           <inertia>
@@ -509,7 +516,7 @@
           <xyz>1 0 0</xyz>
           <limit>
             <lower>0</lower>
-            <upper>1.58</upper>
+            <upper>1.05</upper> <!-- default 1.58 -->
             <effort>1</effort>
           </limit>
           <dynamics>
@@ -608,6 +615,7 @@
       </model>
 
       <model name='hinged_door'>
+<!--        <pose frame=''>0.049999 0.6 0.100002 2e-06 -0 1.5708</pose> -->
         <pose frame=''>0.049999 0.6 0.100002 2e-06 -0 1.5708</pose>
         <scale>1 1 1</scale>
         <link name='door'>

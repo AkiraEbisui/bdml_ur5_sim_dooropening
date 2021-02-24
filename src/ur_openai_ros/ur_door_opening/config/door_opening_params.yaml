@@ -1,7 +1,7 @@
 # Algortihm Parameters
 ML:
   seed: 0
-  obs_dim: 44 # 80 - 36
+  obs_dim: 44 # 18 80 - 36
   n_act: 6
   epochs: 10
   hdim: 64
@@ -10,20 +10,22 @@ ML:
   max_std: 1.0
   clip_range: 0.2
 
-  n_step: 32 # 1024
+  n_step: 32 #32 # 1024
   act_step: 1 #100
   sub_step: 1
   add_act: 1
   maxlen_num: 10
-  save_step: 100
-    
+  save_step: 10
+  
   gamma: 0.99
   lam: 0.98
   episode_size: 1
   batch_size: 16
 
-  nupdates: 5000
-  random_grasp: 1
+  nupdates1: 1000 # for training
+  nupdates2: 100 # for test
+  test_range: 50
+  random_grasp: 2 # 0:not random, 1:x, 2:x & y
 
 # Input type
 control_type: traj_pos #traj_vel or vel or pos or traj_pos
@@ -33,33 +35,46 @@ moveit: 0  # on:1 or off:0
 
 # Environment Parameters
 running_step: 0.0010   # in seconds
-door_frame_tolerances: 0.010 # 0.005
+door_frame_tolerances1: 0.007 # 0.005
+door_frame_tolerances2: 0.010 # 0.005
 max_update_rate: 5000 # 1000 = x1 speed
 
-force_limit: 300 # In position control:300 ~ over 1000 (only rotate y2.5 ~ z-32)
-torque_limit: 30 # In position control:30 ~  (only rotate z1 ~ y-12)
-min_static_limit: -0.5
-max_static_limit: 0.5
+#force_limit: 300 # In position control:300 ~ over 1000 (only rotate y2.5 ~ z-32)
+#torque_limit: 30 # In position control:30 ~  (only rotate z1 ~ y-12)
+force_limit1: 300 # 15 when using only wrist_3
+torque_limit1: 30 #  2 when using only wrist_3
+force_limit2: 300 # 300 ~ over 1000 in position control
+torque_limit2: 30 # 30 ~  in position control
+min_static_limit: -0.6
+max_static_limit: 0.6
 
 # threshold
 threshold:
-  knob_threshold:  0.7
-  panel_threshold: 0.175
+  knob_threshold:  0.7     # act:0.7
+  panel_threshold: 0.078   # act:0.3
 
 act_params:
   dt_act: 0.01 # 15x20=300 @1
   dt_reset: 0.01
   dt_grp: 0.01
-  sub_a0: 40
-  sub_a1: 90
-  sub_a2: 60
-  sub_a3: 120
-  sub_a4: 20
-  sub_a5: 0.5
+  change_sub: 0.65
+  sub_a0: 500
+  sub_a1: 1000
+  sub_a2: 500
+  sub_a3: 1500
+  sub_a4: 300
+  sub_a5: 2 # 0.5
+
+  sub2_a0: 40
+  sub2_a1: 90
+  sub2_a2: 60
+  sub2_a3: 120
+  sub2_a4: 20
+  sub2_a5: 40
 
 obs_params:
   joint_n: 1 # 1/3.14 = 0.318471338
-  eef_n: 1 # 1
+  eef_n: 10 # 1
   eef_rpy_n: 1 # 1
   force_n: 1 # 1
   torque_n: 1 # 1
@@ -68,11 +83,12 @@ obs_params:
 reward_params:
   knob_c: 30       #1 rotation of knob(+)
   knob_bonus_c: 10  #2 bonus of knob rotation(+)
-  panel_c: 1000    #3 door panel open(+)
+  panel_c: 2000    #3 door panel open(+)
   panel_bonus_c: 10 #4 door panel before open(-)
-  tolerances_c: 10   #5 movement of door frame(-)
+  tolerances_c: 300   #5 movement of door frame(-)
   force_c: 10        #6 over force limit1(-)
-  taxel_c: 0         #7 release the knob(-)
+  force_c2: 50       #  over force limit2(-)
+  taxel_c: 50         #7 release the knob(-)
   act_0_n: 10        #8 action[0] (+)
   act_1_n: 10        #  action[1] (+)
   act_2_n: 10        #  action[2] (+)
@@ -139,27 +155,48 @@ init_pose1:
   rpy_y: 1.5912448543568674
 
 init_joint_pose2:
-  shp: 1.488122534496775
-  shl: -1.4496597816566892
-  elb: 2.4377209990850974
-  wr1: 2.168370898415174
-  wr2: -1.4670589583209175
-  wr3: 1.5709174034899702
+  shp: 1.491407573528791
+  shl: -1.434487752926512
+  elb: 2.413675198293162
+  wr1: 2.177423014918695
+  wr2: -1.4691158467941916
+  wr3: 1.5733145480767723
 
 init_pose2:
-  x: -0.08832874
-  y: 0.35898954
-  z: 0.27695617
+#  x: -0.0886014049344
+  x: -0.0856014049344
+  y: 0.367985176034
+  z: 0.278033073131
+  rpy_r: 1.5748219755267783
+  rpy_p: 0.01495954454187348
+  rpy_y: 1.5931041952740963
 #  x: -0.0885606971807
 #  y: 0.367100554257
 #  z: 0.278060295058
-  rpy_r: 1.5746781585880325
-  rpy_p: 0.01488937165698871
-  rpy_y: 1.5931206693388063
+#  rpy_r: 1.5746781585880325
+#  rpy_p: 0.01488937165698871
+#  rpy_y: 1.5731206693388063
+
+after_pull_pose:
+  shp: 1.648087725653139
+  shl: -1.4969974700328346
+  elb: 2.498128485003836
+  wr1: 2.1563878359790927
+  wr2: -1.7477778260118484
+  wr3: 2.5733145480767723
+
+after_pull_xyz:
+  x: -0.119503224332
+  y: 0.317118121264
+  z: 0.276059107781
+  rpy_r: 2.5706315470591077
+  rpy_p: 0.015724591329912007
+  rpy_y: 1.4710841122970895
 
 init_grp_pose1: 0
-init_grp_pose2: 0.30 # 0.31 
-init_grp_pose3: 0.4 # 0.32 # <0.34
+init_grp_pose2: 0.33 # 0.31
+init_grp_pose3: 0.6 # 0.31 # <0.34
+# center:0.33, 
 
 # 20201117:0.31(-55N), 0.32~0.35NG, 0.28NG, 0.29 Sometimes NG 
 # last time: 0.35NG 0.38, 0.4NG
@@ -193,13 +230,13 @@ joint_velocity_limits_array:
   wr3_min: -1.0
 
 cartesian_limits:  # default #On the surface plate
-  x_max: -0.08     # -0.08   #  0.2
+  x_max: 0.02     # -0.08   #  0.2
   x_min: -0.3      # -0.11   # -0.45
-  y_max: 0.370     #  0.365  #  0.7
+  y_max: 0.385     #  0.425  #  0.7 
   y_min: 0.15      #  0.35   # -0.25
   z_max: 0.29      #  0.31   #  2
-  z_min: 0.26      #  0.26   #  0.15
-# grasp_position [-0.08832875,  0.35898955,  0.27695617]
+  z_min: 0.264      #  0.26   #  0.15
+# grasp_position [-0.0856,  0.3679,  0.2780]
 
 episode_done_criteria:
   - panel_10deg

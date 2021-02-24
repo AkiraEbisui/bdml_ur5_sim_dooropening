@@ -6,6 +6,14 @@
     author: Michael Andres Lin (michaelv03@gmail.com)
     date: 10/31/2019
 """
+import math
+import time
+import copy
+from std_msgs.msg import String
+from std_msgs.msg import Float64
+from geometry_msgs.msg import Vector3
+from trajectory_msgs.msg import JointTrajectory
+from trajectory_msgs.msg import JointTrajectoryPoint
 
 import os
 import sys
@@ -29,6 +37,40 @@ INTER_COMMAND_DELAY = 4
 
 ### end global definitions
 
+def GrpCommand(joints_array): # dtype=float32), <type 'numpy.ndarray'>
+    _grp_pub = rospy.Publisher('/gripper_controller/command', JointTrajectory, queue_size=10)
+
+    try:    
+        while rospy.get_rostime().to_sec() == 0.0:
+            time.sleep(0.1)
+
+        jt = JointTrajectory()
+        jt.header.stamp = rospy.Time.now()
+        jt.header.frame_id = "grp"
+        jt.joint_names.append("simple_gripper_right_driver_joint")
+        jt.joint_names.append("simple_gripper_left_driver_joint")
+        jt.joint_names.append("simple_gripper_right_follower_joint")
+        jt.joint_names.append("simple_gripper_left_follower_joint")
+        jt.joint_names.append("simple_gripper_right_spring_link_joint")
+        jt.joint_names.append("simple_gripper_left_spring_link_joint")
+    	    
+        dt = 0.01 	#default 0.01
+        p = JointTrajectoryPoint()	
+        p.positions.append(joints_array[0])
+        p.positions.append(joints_array[1])
+        p.positions.append(joints_array[2])
+        p.positions.append(joints_array[3])
+        p.positions.append(joints_array[4])
+        p.positions.append(joints_array[5])
+        jt.points.append(p)
+
+        # set duration
+        jt.points[0].time_from_start = rospy.Duration.from_sec(dt)
+
+        _grp_pub.publish(jt)
+
+    except rospy.ROSInterruptException: pass
+
 def test_move_home():
     """
     Function to demonstrate moving the ur5 to home pose
@@ -46,7 +88,6 @@ def test_move_home():
     # go to home and print the joint values
     ur5.goto_home_pose()
     print(ur5.get_joint_values())
-
 
 def test_robotiq_gripper():
     """
@@ -88,7 +129,19 @@ def test():
 
     # Instantiage the UR5 interface.
     ur5 = UR5Interface()
-    grp = moveit_commander.MoveGroupCommander("gripper")
+    #grp = moveit_commander.MoveGroupCommander("gripper")
+
+    pose = [-0.0856014049344, 0.372985176034, 0.278033073131, 1.5748219755267783, 0.01495954454187348, 1.5931041952740963]
+#    pose = [-0.0886014049344, 0.367985176034, 0.278033073131, 1.5748219755267783, 0.01495954454187348, 1.5931041952740963]
+    ur5.goto_pose_target(pose)
+
+    init_grp_pose1 = 0.3
+    init_grp_pose1_list = [init_grp_pose1, init_grp_pose1, -init_grp_pose1, -init_grp_pose1, init_grp_pose1, init_grp_pose1]
+    arr_init_g_pos1 = np.array(init_grp_pose1_list, dtype='float32')
+
+    for update in range(200):
+        GrpCommand(arr_init_g_pos1)
+    time.sleep(1)
 
     print(ur5.get_rpy())
     print(ur5.get_pose())

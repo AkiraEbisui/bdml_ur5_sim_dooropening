@@ -1,2 +1,2 @@
-model_checkpoint_path: "ppo_with_gae_model-2000"
-all_model_checkpoint_paths: "ppo_with_gae_model-2000"
+model_checkpoint_path: "ppo_with_gae_model-2700"
+all_model_checkpoint_paths: "ppo_with_gae_model-2700"

@@ -6,6 +6,10 @@ from sklearn.utils import shuffle
 # ROS
 import rospy
 
+# CSV
+import csv
+import sys
+
 import os
 import logging
 import warnings
@@ -49,8 +53,16 @@ class PPOGAEAgent(object):
         self._init_session()
         self.counter = 0
 
+#        self.saver.restore(self.sess, './results/ppo_with_gae_model-850')
+        self.saver.restore(self.sess, './results/ppo_with_gae_model-' + sys.argv[1])
+
+    def load_param(self, save_steps):
         # load the parameters 
-        self.saver.restore(self.sess, './results/ppo_with_gae_model-1500')
+        self._build_graph()
+        self._init_session()
+        self.counter = 0
+        self.saver.restore(self.sess, './results/' + sys.argv[1] + '/ppo_with_gae_model-' + str(save_steps))
+
 
     def _build_graph(self):
         self.g = tf.Graph()
@@ -62,6 +74,7 @@ class PPOGAEAgent(object):
             self._loss_train_op()
             self._kl_entropy()
             self._cnn_layer()
+            self._nibs_cnn_layer()
             self.init = tf.compat.v1.global_variables_initializer()
             self.variables = tf.compat.v1.global_variables()  
             # Create a saver object which will save all the variables
@@ -85,7 +98,9 @@ class PPOGAEAgent(object):
         # place holder for CNN
         self.x = tf.compat.v1.placeholder(tf.float32, (28)) # input 4*7    self.x = tf.compat.v1.placeholder(tf.float32, (None, 28))
         self.y = tf.compat.v1.placeholder(tf.float32, (None, 10)) # output self.y = tf.compat.v1.placeholder(tf.float32, (None, 10))
-        
+        self.nibs_x = tf.compat.v1.placeholder(tf.float32, (36)) # input 3*3*4
+        self.nibs_y = tf.compat.v1.placeholder(tf.float32, (None, 10)) # output self.y
+
     def _policy_nn(self):        
         hid1_size = self.hdim
         hid2_size = self.hdim
@@ -240,15 +255,68 @@ class PPOGAEAgent(object):
             output_b = tf.Variable(tf.constant(0.1, shape=[10]))
             self.output_o = tf.nn.softmax(tf.matmul(fully_connected_o, output_w) + output_b) # output_o = self.y
 
+    def _nibs_cnn_layer(self):
+        img_hight = 6 # 3 or 6
+        img_width = 6 # 3 or 6
+        color_channel = 1 # 4 or 1
+        img = tf.reshape(self.nibs_x, [-1, img_hight, img_width, color_channel]) # batch_size(-1 means auto), hight, width, color channel
+
+        # convolution layer1
+        with tf.name_scope('conv1'):
+            conv1_f = tf.Variable(tf.truncated_normal([2, 2, 1, 32], stddev=0.1))      # filter hight, width, channel, number of filter(output dimension)
+            conv1_c = tf.nn.conv2d(img, conv1_f, strides=[1, 1, 1, 1], padding='SAME') # strides: batch direct,  height direct, width direct, channel direct
+            conv1_b = tf.Variable(tf.constant(0.1, shape=[32]))                        # shape=[output dimension]
+            conv1_o = tf.nn.relu(conv1_c + conv1_b)                                    # 3x3 padding-> 5x5 conv-> 4x4 (4x4x32=512)
+
+        # pool layer1
+        with tf.name_scope('pool1'):
+            pool1_o = tf.nn.max_pool(conv1_o, ksize=[1, 2, 2, 1], strides=[1, 1, 1, 1], padding='SAME') # ksize: batch direct,  height direct, width direct, channel direct
+                                                                                                        # 4x4 padding-> 6x6 pool-> 5x5 (5x5x32=800)
+        # convolution layer2
+        with tf.name_scope('conv2'):
+            conv2_f = tf.Variable(tf.truncated_normal([2, 2, 32, 64], stddev=0.1))
+            conv2_c = tf.nn.conv2d(pool1_o, conv2_f, strides=[1, 1, 1, 1], padding='SAME')
+            conv2_b = tf.Variable(tf.constant(0.1, shape=[64]))
+            conv2_o = tf.nn.relu(conv2_c + conv2_b)                                    # 5x5 padding-> 7x7 conv-> 6x6 (6x6x64=2304)
+            #print("conv2_o", conv2_o) # <tf.Tensor 'conv2/Relu:0' shape=(1, 7, 4, 64) dtype=float32>
+
+        # pool layer 2
+        with tf.name_scope('pool2'):
+            pool2_o = tf.nn.max_pool(conv2_o, ksize=[1, 2, 2, 1], strides=[1, 1, 1, 1], padding='SAME')  # 6x6 padding-> 8x8 pool-> 7x7 (7x7x64=3136)
+            #print("pool2_o", pool2_o) # <tf.Tensor 'pool2/MaxPool:0' shape=(1, 7, 4, 64) dtype=float32>
+
+        # flatten layer
+        with tf.name_scope('flatten'):
+            flatten_o = tf.reshape(pool2_o, [-1, 6 * 6 * 64]) # 1 * 3 * 64 = 192 or 6 * 6 * 64 = 2304 
+
+        # fully connected layer
+        with tf.name_scope('fully_connected'):
+            fully_connected_w = tf.Variable(tf.truncated_normal([6 * 6 * 64, 1024], stddev=0.1))       # filter hight, width, channel, number of filter(output dimension)
+            fully_connected_b = tf.Variable(tf.constant(0.1, shape=[1024]))                             # shape=[output dimension]
+            fully_connected_o = tf.nn.relu(tf.matmul(flatten_o, fully_connected_w) + fully_connected_b) 
+
+        # output layer
+        with tf.name_scope('output'):
+            output_w = tf.Variable(tf.truncated_normal([1024, 10], stddev=0.1))
+            output_b = tf.Variable(tf.constant(0.1, shape=[10]))
+            self.output_nibs_o = tf.nn.softmax(tf.matmul(fully_connected_o, output_w) + output_b) # output_o = self.y
+
     def update_cnn(self, delta_image):
         image_cnn = self.sess.run(self.output_o, {self.x: delta_image})
         return image_cnn
+
+    def update_nibs_cnn(self, delta_nibs_image):
+        image_nibs_cnn = self.sess.run(self.output_nibs_o, {self.nibs_x: delta_nibs_image})
+        return image_nibs_cnn
 
     def update(self, observes, actions, advantages, returns, batch_size): # TRAIN POLICY
         
         num_batches = max(observes.shape[0] // batch_size, 1) # compute the number of batches
         batch_size = observes.shape[0] // num_batches         # recalculate batch_size again
-        
+#        print("num_batches", num_batches) # num_batch = steps / batch_size (4 = 64 / 16)
+#        print("batch_size", batch_size)   # 16
+#        print("observes.shape", observes.shape) # (16, 24) = (batch_size, observation params), actions, advantages, and returns are same
+
         old_means_np, old_std_np = self.sess.run([self.mean, self.std],{self.obs_ph: observes}) # COMPUTE OLD PARAMTER (self.mean = mean_action, self.std = a random value for trick?)
 
         for e in range(self.epochs): # repeat for self.epochs times
@@ -265,7 +333,8 @@ class PPOGAEAgent(object):
                      self.policy_lr_ph: self.policy_lr,
                      self.value_lr_ph: self.value_lr}        
                 self.sess.run([self.train_policy, self.train_value], feed_dict) # compute "policy" and "value" by minimize the policy_loss and value_loss using Adamoptimizer
-            
+#                print("feed_dict", feed_dict)
+
         feed_dict = {self.obs_ph: observes,
              self.act_ph: actions,
              self.adv_ph: advantages,
@@ -276,12 +345,15 @@ class PPOGAEAgent(object):
              self.value_lr_ph: self.value_lr}        # update the feed_dict which added old_std, old_means, policy_lr, and value_lr
        
         policy_loss, value_loss, kl, entropy  = self.sess.run([self.policy_loss, self.value_loss, self.kl, self.entropy], feed_dict)
+#        print("kl.shape", kl.shape)  # ()
+#        print("feed_dict.shape", feed_dict) # self.obs_ph.shape = (num of obs, num of steps), ...
         
         # save the parameters
 	self.counter = self.counter + 1
 
         if (self.counter%save_step) == 0:
-            self.saver.save(self.sess, './results/ppo_with_gae_model', global_step= self.counter)
+            self.saver.save(self.sess, './results/' + sys.argv[1] + '/ppo_with_gae_model', global_step= self.counter)
+#            self.saver.save(self.sess, './results/sys.argv[1]/ppo_with_gae_model', global_step= self.counter)
 
         return policy_loss, value_loss, kl, entropy
     
