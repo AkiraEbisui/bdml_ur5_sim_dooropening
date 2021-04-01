@@ -57,7 +57,7 @@ source venv/bin/activate
 6. pyyaml==(5.3.1)
 7. rospkg==(1.2.8)
 8. gym==(0.16.0)
-
+9. ros-melodic-soem
 
 ## Compilation:
 1. First time compiling this ROS workspace do:
